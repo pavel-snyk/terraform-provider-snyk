@@ -1,0 +1,77 @@
+name: Tests
+
+on:
+  pull_request:
+    paths-ignore:
+      - "CHANGELOG.md"
+      - "README.md"
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - "CHANGELOG.md"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GOPRIVATE: github.com/pavel-snyk/snyk-sdk-go
+      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: "go.mod"
+          cache: true
+
+      - name: Set up tool cache
+        uses: actions/cache@v3
+        with:
+          path: .bin
+          key: ${{  runner.os }}-linter-binaries-${{ hashFiles('**/Makefile') }}
+
+      - name: Lint
+        run: |
+          git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
+          make tools lint
+
+      - name: Test
+        run: make test
+
+#  # Run acceptance tests in a matrix with Terraform CLI versions
+#  test:
+#    name: Acceptance Tests
+#    needs: build
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 15
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        # list whatever Terraform versions here you would like to support
+#        terraform:
+#          - '1.0.*'
+#          - '1.1.*'
+#          - '1.2.*'
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: actions/setup-go@v3
+#        with:
+#          go-version-file: 'go.mod'
+#          cache: true
+#      - uses: hashicorp/setup-terraform@v2
+#        with:
+#          terraform_version: ${{ matrix.terraform }}
+#          terraform_wrapper: false
+#      - run: go mod download
+#      - env:
+#          TF_ACC: "1"
+#        run: go test -v -cover ./internal/provider/
+#        timeout-minutes: 10
