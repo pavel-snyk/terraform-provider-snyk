@@ -38,12 +38,12 @@ jobs:
           path: .bin
           key: ${{  runner.os }}-linter-binaries-${{ hashFiles('**/Makefile') }}
 
-      - name: Lint
+      - name: Lint source code
         run: |
           git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
           make tools lint
 
-      - name: Test
+      - name: Run tests
         run: make test
 
 #  # Run acceptance tests in a matrix with Terraform CLI versions
