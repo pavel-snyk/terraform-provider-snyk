@@ -10,8 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type userDataSourceType struct {
-}
+type userDataSourceType struct{}
 
 func (d userDataSourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
