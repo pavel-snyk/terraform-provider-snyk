@@ -65,7 +65,9 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 }
 
 func (p *snykProvider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
-	return nil, nil
+	return map[string]provider.ResourceType{
+		"snyk_organization": organizationResourceType{},
+	}, nil
 }
 
 func (p *snykProvider) GetDataSources(_ context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
