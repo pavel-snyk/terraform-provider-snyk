@@ -2,7 +2,7 @@ terraform {
   required_providers {
     snyk = {
       source  = "pavel-snyk/snyk"
-      version = "~> 0.2.0"
+      version = "~> 0.2"
     }
   }
 }
