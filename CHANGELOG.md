@@ -1,3 +1,9 @@
+<a name="v0.3.0"></a>
+## v0.2.0 (2022-08-18)
+
+### Features
+* **datasource/snyk_organization**: add new data source for organizations
+
 <a name="v0.2.0"></a>
 ## v0.2.0 (2022-08-16)
 
