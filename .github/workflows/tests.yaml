@@ -46,6 +46,34 @@ jobs:
       - name: Run tests
         run: make test
 
+  docs:
+    name: documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: "go.mod"
+          cache: true
+
+      - name: Install tfplugindocs
+        run: go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+
+      - name: Generate provider docs
+        run: |
+          make docs-generate
+
+      - name: Validate provider docs
+        run: |
+          git diff --compact-summary --exit-code || \
+            (echo; echo "Unexpected difference in directories after code generation. Run 'make docs-generate' and commit."; exit 1)
+          make docs-validate
+
+
 #  # Run acceptance tests in a matrix with Terraform CLI versions
 #  test:
 #    name: Acceptance Tests
