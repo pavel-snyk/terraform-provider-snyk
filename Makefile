@@ -54,6 +54,16 @@ build:
 	@echo "    running go build for GOOS=$(DEV_GOOS) GOARCH=$(DEV_GOARCH)"
 	@go build -o $(BUILD_DIR)/$(PROJECT_NAME)$(EXE) main.go
 
+## docs: Generate and validate provider documentation with tfplugindocs.
+.PHONY: docs
+docs:
+	@echo "===> Generating and validate provider documentation..."
+	@rm -f docs/data-sources/*.md
+	@rm -f docs/resources/*.md
+	@rm -f docs/index.md
+	@tfplugindocs generate
+	@tfplugindocs validate
+
 
 help: Makefile
 	@echo "Usage: make <command>"
