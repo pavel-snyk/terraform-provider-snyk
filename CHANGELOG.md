@@ -1,6 +1,8 @@
-<a name="unreleased"></a>
-## [Unreleased]
+
+<a name="v0.3.1"></a>
+## v0.3.1 (2022-08-20)
 ### Maintaining
+* use git-chglog for changelog generation
 * install tfplugindocs via tool-as-dependencies
 * add make targets to generate and validate docs
 
