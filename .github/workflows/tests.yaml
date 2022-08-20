@@ -60,18 +60,14 @@ jobs:
           go-version-file: "go.mod"
           cache: true
 
-      - name: Install tfplugindocs
-        run: go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
-
-      - name: Generate provider docs
-        run: |
-          make docs-generate
+      - name: Install tools
+        run: cd tools && go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
       - name: Validate provider docs
         run: |
+          make docs
           git diff --compact-summary --exit-code || \
-            (echo; echo "Unexpected difference in directories after code generation. Run 'make docs-generate' and commit."; exit 1)
-          make docs-validate
+            (echo; echo "Unexpected difference after code generation. Run 'make docs' and commit."; exit 1)
 
 
 #  # Run acceptance tests in a matrix with Terraform CLI versions
