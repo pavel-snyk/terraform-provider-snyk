@@ -1,4 +1,9 @@
 
+<a name="v0.4.0"></a>
+## v0.4.0 (2022-08-22)
+### Features
+* **resource/snyk_integration**: add new resource for integrations
+
 <a name="v0.3.1"></a>
 ## v0.3.1 (2022-08-20)
 ### Maintaining
@@ -12,7 +17,7 @@
 * **datasource/snyk_organization**: add new data source for organizations
 
 <a name="v0.2.0"></a>
-## v0.2.0 (2022-08-18)
+## v0.2.0 (2022-08-16)
 ### Documentation
 * update readme and contribution guidelines
 ### Features
