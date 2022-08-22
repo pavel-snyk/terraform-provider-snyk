@@ -96,8 +96,8 @@ github.com/mitchellh/go-testing-interface v1.14.1/go.mod h1:gfgS7OtZj6MA4U1UrDRp
 github.com/nsf/jsondiff v0.0.0-20200515183724-f29ed568f4ce h1:RPclfga2SEJmgMmz2k+Mg7cowZ8yv4Trqw9UsJby758=
 github.com/oklog/run v1.0.0 h1:Ru7dDtJNOyC66gQ5dQmaCa0qIsAUFY3sFpK1Xk8igrw=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
-github.com/pavel-snyk/snyk-sdk-go v0.0.0-20220815055825-bd3d432a32ee h1:dBSud6cXHlpO5jgeuiE+eb1/5kRDhTZvj4JFT4c7zi8=
-github.com/pavel-snyk/snyk-sdk-go v0.0.0-20220815055825-bd3d432a32ee/go.mod h1:LRL1TRuuM925gnyGp54WtS9p8S4yJMd0oS4JpLg+n7Y=
+github.com/pavel-snyk/snyk-sdk-go v0.0.0-20220821093142-6ca0d0c19ebc h1:b/KMFI/LHdaea9EPXKtbd4uKNkTVsGENIuSC879vO+A=
+github.com/pavel-snyk/snyk-sdk-go v0.0.0-20220821093142-6ca0d0c19ebc/go.mod h1:LRL1TRuuM925gnyGp54WtS9p8S4yJMd0oS4JpLg+n7Y=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
