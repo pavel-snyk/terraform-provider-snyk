@@ -28,10 +28,7 @@ jobs:
           cache: true
 
       - name: Install tools
-        run: |
-          cd tools
-          go install github.com/git-chglog/git-chglog/cmd/git-chglog
-          go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+        run: make tools
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v5
