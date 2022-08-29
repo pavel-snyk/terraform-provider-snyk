@@ -32,12 +32,6 @@ jobs:
           go-version-file: "go.mod"
           cache: true
 
-      - name: Set up tool cache
-        uses: actions/cache@v3
-        with:
-          path: .bin
-          key: ${{  runner.os }}-linter-binaries-${{ hashFiles('**/Makefile') }}
-
       - name: Lint source code
         run: |
           git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/

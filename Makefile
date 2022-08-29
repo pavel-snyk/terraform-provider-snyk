@@ -7,7 +7,7 @@ BUILD_DIR := build
 DEV_GOARCH := $(shell go env GOARCH)
 DEV_GOOS := $(shell go env GOOS)
 EXE =
-ifeq ($(GOOS),windows)
+ifeq ($(DEV_GOOS),windows)
 EXE = .exe
 endif
 
@@ -15,11 +15,10 @@ endif
 ## tools: Install required tooling.
 .PHONY: tools
 tools:
-ifeq (,$(wildcard ./.bin/golangci-lint*))
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b .bin v1.48.0
-else
-	@echo "==> Required tooling is already installed"
-endif
+	@echo "==> Installing required tooling..."
+	@cd tools && go install github.com/git-chglog/git-chglog/cmd/git-chglog
+	@cd tools && go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	@cd tools && go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
 # clean: Delete the build directory.
 .PHONY: clean
@@ -31,7 +30,7 @@ clean:
 .PHONY: lint
 lint:
 	@echo "==> Linting code with 'golangci-lint'..."
-	@.bin/golangci-lint run ./...
+	@golangci-lint run ./...
 
 ## test: Run all unit tests.
 .PHONY: test
