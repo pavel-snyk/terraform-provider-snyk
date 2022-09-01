@@ -2,17 +2,16 @@ package provider
 
 import (
 	"context"
+	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/pavel-snyk/snyk-sdk-go/snyk"
-)
-
-const (
-	defaultEndpoint = "https://snyk.io/api/"
 )
 
 func New() provider.Provider {
@@ -52,14 +51,38 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 	var config providerData
 
 	diags := request.Config.Get(ctx, &config)
+	response.Diagnostics.Append(diags...)
 	if diags.HasError() {
-		response.Diagnostics.Append(diags...)
 		return
 	}
 
 	config.terraformVersion = request.TerraformVersion
 
-	client := newSnykClient(&config)
+	// fallback to env if unset
+	if config.Endpoint.Null {
+		config.Endpoint.Value = os.Getenv("SNYK_ENDPOINT")
+	}
+	if config.Token.Null {
+		config.Token.Value = os.Getenv("SNYK_TOKEN")
+	}
+
+	// required if still unset
+	if config.Token.Value == "" {
+		response.Diagnostics.AddAttributeError(
+			path.Root("token"),
+			"Invalid provider config",
+			"token must be set.",
+		)
+		return
+	}
+
+	opts := []snyk.ClientOption{snyk.WithUserAgent("terraform-provider-snyk/dev (+https://registry.terraform.io/providers/pavel-snyk/snyk)")}
+	if config.Endpoint.Value != "" {
+		tflog.Info(ctx, "Default endpoint is overridden", map[string]interface{}{"endpoint": config.Endpoint.Value})
+		opts = append(opts, snyk.WithBaseURL(config.Endpoint.Value))
+	}
+
+	client := snyk.NewClient(config.Token.Value, opts...)
 
 	p.client = client
 }
@@ -76,14 +99,4 @@ func (p *snykProvider) GetDataSources(_ context.Context) (map[string]provider.Da
 		"snyk_organization": organizationDataSourceType{},
 		"snyk_user":         userDataSourceType{},
 	}, nil
-}
-
-func newSnykClient(pd *providerData) *snyk.Client {
-	if pd.Endpoint.Null {
-		pd.Endpoint = types.String{Value: defaultEndpoint}
-	}
-	return snyk.NewClient(pd.Token.Value,
-		snyk.WithBaseURL(pd.Endpoint.Value),
-		snyk.WithUserAgent("terraform-provider-snyk/dev (+https://registry.terraform.io/providers/pavel-snyk/snyk)"),
-	)
 }
