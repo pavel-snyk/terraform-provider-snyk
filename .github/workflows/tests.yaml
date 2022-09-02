@@ -19,9 +19,6 @@ jobs:
     name: build
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    env:
-      GOPRIVATE: github.com/pavel-snyk/snyk-sdk-go
-      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -32,13 +29,64 @@ jobs:
           go-version-file: "go.mod"
           cache: true
 
-      - name: Lint source code
-        run: |
-          git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
-          make tools lint
+      - name: Build provider
+        run: make build
 
-      - name: Run tests
+
+  unit-tests:
+    name: unit tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: "go.mod"
+          cache: true
+
+      - name: Install tools
+        run: make tools
+
+      - name: Lint source code
+        run: make lint
+
+      - name: Run unit tests
         run: make test
+
+  acceptance-tests:
+    name: acceptance tests (terraform ${{ matrix.terraform-version }})
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        terraform-version:
+          - "1.0.*"
+          - "1.1.*"
+          - "1.2.*"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ matrix.terraform-version }}
+          terraform_wrapper: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: "go.mod"
+          cache: true
+
+      - name: Run acceptance tests
+        run: make testacc
 
   docs:
     name: documentation
@@ -55,41 +103,10 @@ jobs:
           cache: true
 
       - name: Install tools
-        run: cd tools && go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+        run: make tools
 
       - name: Validate provider docs
         run: |
           make docs
           git diff --compact-summary --exit-code || \
             (echo; echo "Unexpected difference after code generation. Run 'make docs' and commit."; exit 1)
-
-
-#  # Run acceptance tests in a matrix with Terraform CLI versions
-#  test:
-#    name: Acceptance Tests
-#    needs: build
-#    runs-on: ubuntu-latest
-#    timeout-minutes: 15
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        # list whatever Terraform versions here you would like to support
-#        terraform:
-#          - '1.0.*'
-#          - '1.1.*'
-#          - '1.2.*'
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: actions/setup-go@v3
-#        with:
-#          go-version-file: 'go.mod'
-#          cache: true
-#      - uses: hashicorp/setup-terraform@v2
-#        with:
-#          terraform_version: ${{ matrix.terraform }}
-#          terraform_wrapper: false
-#      - run: go mod download
-#      - env:
-#          TF_ACC: "1"
-#        run: go test -v -cover ./internal/provider/
-#        timeout-minutes: 10
