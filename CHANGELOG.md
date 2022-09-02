@@ -1,4 +1,16 @@
 
+<a name="v0.4.1"></a>
+## v0.4.1 (2022-09-02)
+### Bug Fixes
+* consider envvars by provider configuration
+### Documentation
+* add how-to guide for provider authentication
+### Maintaining
+* activate unit and acceptance tests workflows
+* install golangci-lint via tools-as-dependencies
+* **deps**: bump github.com/hashicorp/terraform-plugin-framework
+* **golangci-lint**: replace deadcode and varcheck linter with unused
+
 <a name="v0.4.0"></a>
 ## v0.4.0 (2022-08-22)
 ### Features
