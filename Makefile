@@ -44,7 +44,7 @@ test:
 testacc:
 	@echo "==> Running all acceptance tests..."
 	@mkdir -p $(BUILD_DIR)
-	@TF_ACC=1 go test -count=1 -v -cover -coverprofile=$(BUILD_DIR)/coverage-with-acceptance.out -timeout 120m ./...
+	@TF_ACC=1 go test -count=1 -v -cover -coverprofile=$(BUILD_DIR)/coverage-with-acceptance.out -parallel=4 -timeout 120m ./...
 
 ## build: Build provider for default local system's operating system and architecture.
 .PHONY: build
