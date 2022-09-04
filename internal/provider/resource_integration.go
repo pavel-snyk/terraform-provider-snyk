@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/pavel-snyk/snyk-sdk-go/snyk"
+
+	"github.com/pavel-snyk/terraform-provider-snyk/internal/validators"
 )
 
 type integrationResourceType struct{}
@@ -37,44 +39,68 @@ func (r integrationResourceType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				Description: "The password used by the integration.",
 				Optional:    true,
 				Sensitive:   true,
-				Type:        types.StringType,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
+				Type: types.StringType,
 			},
 			"region": {
 				Description: "The region used by the integration.",
 				Optional:    true,
-				Type:        types.StringType,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
+				Type: types.StringType,
 			},
 			"registry_url": {
 				Description: "The URL for container registries used by the integration (e.g. for ECR).",
 				Optional:    true,
-				Type:        types.StringType,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
+				Type: types.StringType,
 			},
 			"role_arn": {
 				Description: "The role ARN used by the integration (ECR only).",
 				Optional:    true,
-				Type:        types.StringType,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
+				Type: types.StringType,
 			},
 			"token": {
 				Description: "The token used by the integration.",
 				Optional:    true,
 				Sensitive:   true,
-				Type:        types.StringType,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
+				Type: types.StringType,
 			},
 			"type": {
 				Description:   "The integration type, e.g. 'github'.",
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
-				Type:          types.StringType,
+				Validators: []tfsdk.AttributeValidator{
+					validators.NotEmptyString(),
+				},
+				Type: types.StringType,
 			},
 			"url": {
 				Description: "The URL used by the integration.",
 				Optional:    true,
-				Type:        types.StringType,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
+				Type: types.StringType,
 			},
 			"username": {
 				Description: "The username used by the integration.",
 				Optional:    true,
-				Type:        types.StringType,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
+				Type: types.StringType,
 			},
 		},
 	}, nil
@@ -220,25 +246,14 @@ func (r integrationResource) Read(ctx context.Context, request resource.ReadRequ
 
 func (r integrationResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 	var plan integrationData
-	diags := request.Plan.Set(ctx, &plan)
+	diags := request.Plan.Get(ctx, &plan)
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 
-	var state integrationData
-	diags = request.State.Get(ctx, &state)
-	response.Diagnostics.Append(diags...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-
-	var config integrationData
-	request.Config.Get(ctx, &config)
-
-	integrationID := state.ID.Value
-	organizationID := state.OrganizationID.Value
-
+	organizationID := plan.OrganizationID.Value
+	integrationID := plan.ID.Value
 	updateRequest := &snyk.IntegrationUpdateRequest{
 		Integration: &snyk.Integration{
 			Credentials: &snyk.IntegrationCredentials{
@@ -246,11 +261,11 @@ func (r integrationResource) Update(ctx context.Context, request resource.Update
 				Region:       plan.Region.Value,
 				RegistryBase: plan.RegistryURL.Value,
 				RoleARN:      plan.RoleARN.Value,
-				Token:        config.Token.Value,
+				Token:        plan.Token.Value,
 				URL:          plan.URL.Value,
 				Username:     plan.Username.Value,
 			},
-			Type: snyk.IntegrationType(state.Type.Value),
+			Type: snyk.IntegrationType(plan.Type.Value),
 		},
 	}
 	tflog.Info(ctx, "integrationResource.Update", map[string]interface{}{"payload": updateRequest})
@@ -260,11 +275,9 @@ func (r integrationResource) Update(ctx context.Context, request resource.Update
 		return
 	}
 
-	state.ID = types.String{Value: integration.ID}
-	state.Token = config.Token
+	plan.ID = types.String{Value: integration.ID}
 
-	diags = response.State.Set(ctx, &state)
-
+	diags = response.State.Set(ctx, &plan)
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
 		return
