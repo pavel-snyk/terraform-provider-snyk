@@ -60,7 +60,7 @@ func testAccCheckResourceIntegrationExists(resourceName, organizationName string
 		for _, org := range orgs {
 			if org.Name == organizationName {
 				organizationID = org.ID
-				return nil
+				break
 			}
 		}
 		if organizationID == "" {
@@ -68,6 +68,10 @@ func testAccCheckResourceIntegrationExists(resourceName, organizationName string
 		}
 
 		integrations, _, err := client.Integrations.List(context.Background(), organizationID)
+		if err != nil {
+			return err
+		}
+
 		for t, id := range integrations {
 			if id == rs.Primary.ID {
 				integration = &snyk.Integration{
