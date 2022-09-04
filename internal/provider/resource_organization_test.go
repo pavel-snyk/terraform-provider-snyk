@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -25,6 +26,10 @@ func TestAccResourceOrganization_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProviderFactories,
 		CheckDestroy:             testAccCheckResourceOrganizationDestroy,
 		Steps: []resource.TestStep{
+			{
+				Config:      testAccResourceOrganizationConfig("", groupID),
+				ExpectError: regexp.MustCompile("string must not be empty"),
+			},
 			{
 				Config: testAccResourceOrganizationConfig(organizationName, groupID),
 				Check: resource.ComposeAggregateTestCheckFunc(

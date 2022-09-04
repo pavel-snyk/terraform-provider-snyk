@@ -8,6 +8,7 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.7.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.21.0
 	github.com/pavel-snyk/snyk-sdk-go v0.0.0-20220821093142-6ca0d0c19ebc
+	github.com/stretchr/testify v1.8.0
 )
 
 require (
@@ -44,16 +45,18 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/oklog/run v1.0.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect
-	github.com/vmihailenco/tagparser v0.1.1 // indirect
+	github.com/vmihailenco/tagparser v0.1.2 // indirect
 	github.com/zclconf/go-cty v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167 // indirect
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
-	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
+	golang.org/x/net v0.0.0-20220708220712-1185a9018129 // indirect
+	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/appengine v1.6.6 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20200711021454-869866162049 // indirect
 	google.golang.org/grpc v1.48.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
