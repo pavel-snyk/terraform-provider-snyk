@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"flag"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 
@@ -9,8 +11,17 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-	_ = providerserver.Serve(ctx, provider.New, providerserver.ServeOpts{
+	var debugMode bool
+
+	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with debug support")
+	flag.Parse()
+
+	err := providerserver.Serve(context.Background(), provider.New, providerserver.ServeOpts{
 		Address: "registry.terraform.io/pavel-snyk/snyk",
+		Debug:   debugMode,
 	})
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
