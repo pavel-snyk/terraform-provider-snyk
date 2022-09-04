@@ -9,8 +9,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
 	"github.com/pavel-snyk/snyk-sdk-go/snyk"
+
+	"github.com/pavel-snyk/terraform-provider-snyk/internal/validators"
 )
 
 type organizationResourceType struct{}
@@ -34,6 +35,9 @@ func (r organizationResourceType) GetSchema(_ context.Context) (tfsdk.Schema, di
 				Description: "The name of the organization.",
 				Required:    true,
 				Type:        types.StringType,
+				Validators: []tfsdk.AttributeValidator{
+					validators.NotEmptyString(),
+				},
 			},
 		},
 	}, nil
