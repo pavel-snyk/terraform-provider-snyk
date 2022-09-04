@@ -36,6 +36,7 @@ func TestAccResourceOrganization_basic(t *testing.T) {
 					testAccCheckResourceOrganizationExists("snyk_organization.test", &organization),
 					resource.TestCheckResourceAttr("snyk_organization.test", "name", organizationName),
 					resource.TestCheckResourceAttr("snyk_organization.test", "group_id", groupID),
+					resource.TestCheckResourceAttrSet("snyk_organization.test", "id"),
 				),
 			},
 		},
