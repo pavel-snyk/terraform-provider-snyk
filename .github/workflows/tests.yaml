@@ -27,7 +27,6 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
-          cache: true
 
       - name: Build provider
         run: make build
@@ -45,7 +44,16 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
-          cache: true
+
+      - name: Set up cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum', 'tools/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Install tools
         run: make tools
@@ -86,7 +94,19 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
-          cache: true
+
+      - name: Set up cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum', 'tools/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install tools
+        run: make tools
 
       - name: Run acceptance tests
         run: make testacc
@@ -103,7 +123,16 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: "go.mod"
-          cache: true
+
+      - name: Set up cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum', 'tools/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Install tools
         run: make tools
