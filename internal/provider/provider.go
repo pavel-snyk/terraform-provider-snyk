@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -14,12 +15,22 @@ import (
 	"github.com/pavel-snyk/snyk-sdk-go/snyk"
 )
 
-func New() provider.Provider {
-	return &snykProvider{}
+func New(version string) func() provider.Provider {
+	return func() provider.Provider {
+		return &snykProvider{
+			version: version,
+		}
+	}
 }
 
 type snykProvider struct {
 	client *snyk.Client
+
+	// version is set to
+	//  - the provider version on release
+	//  - "dev" when the provider is built and ran locally
+	//  - "testacc" when running acceptance tests
+	version string
 }
 
 func (p *snykProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -76,7 +87,7 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 		return
 	}
 
-	opts := []snyk.ClientOption{snyk.WithUserAgent("terraform-provider-snyk/dev (+https://registry.terraform.io/providers/pavel-snyk/snyk)")}
+	opts := []snyk.ClientOption{snyk.WithUserAgent(p.userAgent())}
 	if config.Endpoint.Value != "" {
 		tflog.Info(ctx, "Default endpoint is overridden", map[string]interface{}{"endpoint": config.Endpoint.Value})
 		opts = append(opts, snyk.WithBaseURL(config.Endpoint.Value))
@@ -99,4 +110,10 @@ func (p *snykProvider) GetDataSources(_ context.Context) (map[string]provider.Da
 		"snyk_organization": organizationDataSourceType{},
 		"snyk_user":         userDataSourceType{},
 	}, nil
+}
+
+func (p *snykProvider) userAgent() string {
+	name := "terraform-provider-snyk"
+	comment := "https://registry.terraform.io/providers/pavel-snyk/snyk"
+	return fmt.Sprintf("%s/%s (+%s)", name, p.version, comment)
 }

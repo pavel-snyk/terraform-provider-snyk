@@ -19,19 +19,19 @@ func TestNotEmptyStringValidatorValidator(t *testing.T) {
 		expectError bool
 	}
 	tests := map[string]testCase{
-		"unknown String": {
+		"unknown_string": {
 			val:         types.String{Unknown: true},
 			expectError: false,
 		},
-		"null String": {
+		"null_string": {
 			val:         types.String{Null: true},
 			expectError: true,
 		},
-		"empty String": {
+		"empty_string": {
 			val:         types.String{Value: ""},
 			expectError: true,
 		},
-		"non-empty String": {
+		"non-empty_string": {
 			val:         types.String{Value: "test string"},
 			expectError: false,
 		},

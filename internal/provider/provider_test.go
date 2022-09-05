@@ -8,9 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/stretchr/testify/assert"
 )
 
-var testAccProvider = New()
+var testAccProvider = New("testacc")()
 var testAccProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
 	"snyk": func() (tfprotov6.ProviderServer, error) {
 		return providerserver.NewProtocol6WithError(testAccProvider)()
@@ -47,4 +48,35 @@ data "snyk_user" "self" {}
 			},
 		},
 	})
+}
+
+func TestProvider_UserAgent(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		version  string
+		expected string
+	}
+	tests := map[string]testCase{
+		"empty_version": {
+			version:  "",
+			expected: "terraform-provider-snyk/ (+https://registry.terraform.io/providers/pavel-snyk/snyk)",
+		},
+		"dev_version": {
+			version:  "dev",
+			expected: "terraform-provider-snyk/dev (+https://registry.terraform.io/providers/pavel-snyk/snyk)",
+		},
+		"release_version": {
+			version:  "1.1.1",
+			expected: "terraform-provider-snyk/1.1.1 (+https://registry.terraform.io/providers/pavel-snyk/snyk)",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			p := &snykProvider{version: test.version}
+
+			assert.Equal(t, test.expected, p.userAgent())
+		})
+	}
 }
