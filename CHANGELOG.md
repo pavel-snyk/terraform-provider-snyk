@@ -1,4 +1,11 @@
 
+<a name="v0.5.0"></a>
+## v0.5.0 (2022-09-05)
+### Features
+* **datasource/snyk_project**: add new data source for projects
+### Maintaining
+* upgrade snyk-sdk-go to v0.1.0
+
 <a name="v0.4.2"></a>
 ## v0.4.2 (2022-09-05)
 ### Bug Fixes
