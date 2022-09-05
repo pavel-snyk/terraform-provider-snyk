@@ -1,4 +1,15 @@
 
+<a name="v0.4.2"></a>
+## v0.4.2 (2022-09-05)
+### Bug Fixes
+* **resource/snyk_integration**: fix plan and state handling by updating integration
+### Code Refactoring
+* add validator with NotEmptyString() function
+* **resource/snyk_organization**: add acceptance tests for organization resource
+### Maintaining
+* set provider version via ldflags when releasing
+* add debug support for provider
+
 <a name="v0.4.1"></a>
 ## v0.4.1 (2022-09-02)
 ### Bug Fixes
