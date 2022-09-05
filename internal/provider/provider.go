@@ -108,6 +108,7 @@ func (p *snykProvider) GetResources(_ context.Context) (map[string]provider.Reso
 func (p *snykProvider) GetDataSources(_ context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
 	return map[string]provider.DataSourceType{
 		"snyk_organization": organizationDataSourceType{},
+		"snyk_project":      projectDataSourceType{},
 		"snyk_user":         userDataSourceType{},
 	}, nil
 }
