@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -197,6 +198,27 @@ func (r *integrationResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 				Validators: []tfsdk.AttributeValidator{
 					validators.NotEmptyString(),
+					stringvalidator.OneOf([]string{
+						snyk.ACRIntegrationType,
+						snyk.ArtifactoryCRIntegrationType,
+						snyk.AzureReposIntegrationType,
+						snyk.BitBucketCloudIntegrationType,
+						snyk.BitBucketConnectAppIntegrationType,
+						snyk.BitBucketServerIntegrationType,
+						snyk.DigitalOceanCRIntegrationType,
+						snyk.DockerHubIntegrationType,
+						snyk.ECRIntegrationType,
+						snyk.GCRIntegrationType,
+						snyk.GitHubIntegrationType,
+						snyk.GitHubCRIntegrationType,
+						snyk.GitHubEnterpriseIntegrationType,
+						snyk.GitLabIntegrationType,
+						snyk.GitLabCRIntegrationType,
+						snyk.GoogleArtifactCRIntegrationType,
+						snyk.HarborCRIntegrationType,
+						snyk.NexusCRIntegrationType,
+						snyk.QuayCRIntegrationType,
+					}...),
 				},
 				Type: types.StringType,
 			},

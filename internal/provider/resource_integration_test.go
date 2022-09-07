@@ -63,6 +63,28 @@ func TestAccResourceIntegration_pullRequestSCA(t *testing.T) {
 	})
 }
 
+func TestAccResourceIntegration_invalidTypes(t *testing.T) {
+	t.Parallel()
+
+	organizationName := fmt.Sprintf("tf-test-acc_%s", acctest.RandString(10))
+	groupID := os.Getenv("SNYK_GROUP_ID")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccResourceIntegrationConfigWithTypes(organizationName, groupID, ""),
+				ExpectError: regexp.MustCompile("string must not be empty"),
+			},
+			{
+				Config:      testAccResourceIntegrationConfigWithTypes(organizationName, groupID, "non-existing-type"),
+				ExpectError: regexp.MustCompile("Value must be one of"),
+			},
+		},
+	})
+}
+
 func testAccCheckResourceIntegrationExists(resourceName, organizationName string, integration *snyk.Integration) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		// retrieve resource from state
@@ -145,4 +167,19 @@ resource "snyk_integration" "test" {
   }
 }
 `, organizationName, groupID, token)
+}
+
+func testAccResourceIntegrationConfigWithTypes(organizationName, groupID, integrationType string) string {
+	return fmt.Sprintf(`
+ resource "snyk_organization" "test" {
+   name = "%s"
+   group_id = "%s"
+ }
+ resource "snyk_integration" "test" {
+   organization_id = snyk_organization.test.id
+   type  = "%s"
+   url   = "https://testing.gitlab.local"
+   token = "secure-token"
+ }
+ `, organizationName, groupID, integrationType)
 }
