@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/terraform-plugin-go v0.14.0
 	github.com/hashicorp/terraform-plugin-log v0.7.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.21.0
-	github.com/pavel-snyk/snyk-sdk-go v0.1.0
+	github.com/pavel-snyk/snyk-sdk-go v0.2.0
 	github.com/stretchr/testify v1.8.0
 )
 
