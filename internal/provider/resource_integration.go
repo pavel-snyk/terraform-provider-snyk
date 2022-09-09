@@ -13,8 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/pavel-snyk/snyk-sdk-go/snyk"
-
-	"github.com/pavel-snyk/terraform-provider-snyk/internal/validators"
 )
 
 var _ resource.Resource = (*integrationResource)(nil)
@@ -197,7 +195,6 @@ func (r *integrationResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 				Validators: []tfsdk.AttributeValidator{
-					validators.NotEmptyString(),
 					stringvalidator.OneOf([]string{
 						snyk.ACRIntegrationType,
 						snyk.ArtifactoryCRIntegrationType,

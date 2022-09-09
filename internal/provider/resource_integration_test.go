@@ -75,7 +75,7 @@ func TestAccResourceIntegration_invalidTypes(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccResourceIntegrationConfigWithTypes(organizationName, groupID, ""),
-				ExpectError: regexp.MustCompile("string must not be empty"),
+				ExpectError: regexp.MustCompile("Value must be one of"),
 			},
 			{
 				Config:      testAccResourceIntegrationConfigWithTypes(organizationName, groupID, "non-existing-type"),
