@@ -175,8 +175,8 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLA
 github.com/nsf/jsondiff v0.0.0-20200515183724-f29ed568f4ce h1:RPclfga2SEJmgMmz2k+Mg7cowZ8yv4Trqw9UsJby758=
 github.com/oklog/run v1.0.0 h1:Ru7dDtJNOyC66gQ5dQmaCa0qIsAUFY3sFpK1Xk8igrw=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
-github.com/pavel-snyk/snyk-sdk-go v0.1.0 h1:k615zmCpVCLMcEW+RyV5EqFaBmOEUM4Ny5QTcSKotGA=
-github.com/pavel-snyk/snyk-sdk-go v0.1.0/go.mod h1:LRL1TRuuM925gnyGp54WtS9p8S4yJMd0oS4JpLg+n7Y=
+github.com/pavel-snyk/snyk-sdk-go v0.3.1 h1:RechIZ/uzShWUDkEzgt5Bu3CCLeg7q/I09AWBL9uhHQ=
+github.com/pavel-snyk/snyk-sdk-go v0.3.1/go.mod h1:LRL1TRuuM925gnyGp54WtS9p8S4yJMd0oS4JpLg+n7Y=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
