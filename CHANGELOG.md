@@ -1,4 +1,14 @@
 
+<a name="v0.6.0"></a>
+## v0.6.0 (2022-09-18)
+### Features
+* **resource/snyk_integration**: add configuration options for pull request testing
+### Maintaining
+* update snyk-sdk-go to v0.3.1
+* fix caching for tools task in test workflow
+* **deps**: bump github.com/hashicorp/terraform-plugin-sdk/v2
+* **deps**: bump github.com/hashicorp/terraform-plugin-sdk/v2
+
 <a name="v0.5.0"></a>
 ## v0.5.0 (2022-09-05)
 ### Features
