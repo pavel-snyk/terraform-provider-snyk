@@ -44,6 +44,51 @@ func (r integrationResourceType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				},
 				Type: types.StringType,
 			},
+			"pull_request_testing": {
+				Description: "Pull request tests settings applied whenever a new PR is opened.",
+				Optional:    true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
+				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					"enabled": {
+						Description: "Denotes the pull request testing feature should be enabled for this integration.",
+						Computed:    true,
+						Optional:    true,
+						PlanModifiers: tfsdk.AttributePlanModifiers{
+							resource.UseStateForUnknown(),
+						},
+						Type: types.BoolType,
+					},
+					"fail_on_any_issue": {
+						Description: "Fails an opened pull request if any vulnerable dependencies have been detected, otherwise the pull request should only fail when a dependency with issues is added.",
+						Computed:    true,
+						Optional:    true,
+						PlanModifiers: tfsdk.AttributePlanModifiers{
+							resource.UseStateForUnknown(),
+						},
+						Type: types.BoolType,
+					},
+					"fail_only_for_high_and_critical_severity": {
+						Description: "Fails an opened pull request if any dependencies are marked as being of high or critical severity.",
+						Computed:    true,
+						Optional:    true,
+						PlanModifiers: tfsdk.AttributePlanModifiers{
+							resource.UseStateForUnknown(),
+						},
+						Type: types.BoolType,
+					},
+					"fail_only_on_issues_with_fix": {
+						Description: "Fails an opened pull request only when issues found have a fix available.",
+						Computed:    true,
+						Optional:    true,
+						PlanModifiers: tfsdk.AttributePlanModifiers{
+							resource.UseStateForUnknown(),
+						},
+						Type: types.BoolType,
+					},
+				}),
+			},
 			"region": {
 				Description: "The region used by the integration.",
 				Optional:    true,
@@ -117,16 +162,24 @@ type integrationResource struct {
 }
 
 type integrationData struct {
-	ID             types.String `tfsdk:"id"`
-	OrganizationID types.String `tfsdk:"organization_id"`
-	Password       types.String `tfsdk:"password"`
-	Region         types.String `tfsdk:"region"`
-	RegistryURL    types.String `tfsdk:"registry_url"`
-	RoleARN        types.String `tfsdk:"role_arn"`
-	Token          types.String `tfsdk:"token"`
-	Type           types.String `tfsdk:"type"`
-	URL            types.String `tfsdk:"url"`
-	Username       types.String `tfsdk:"username"`
+	ID                 types.String        `tfsdk:"id"`
+	OrganizationID     types.String        `tfsdk:"organization_id"`
+	Password           types.String        `tfsdk:"password"`
+	PullRequestTesting *pullRequestTesting `tfsdk:"pull_request_testing"`
+	Region             types.String        `tfsdk:"region"`
+	RegistryURL        types.String        `tfsdk:"registry_url"`
+	RoleARN            types.String        `tfsdk:"role_arn"`
+	Token              types.String        `tfsdk:"token"`
+	Type               types.String        `tfsdk:"type"`
+	URL                types.String        `tfsdk:"url"`
+	Username           types.String        `tfsdk:"username"`
+}
+
+type pullRequestTesting struct {
+	Enabled                            types.Bool `tfsdk:"enabled"`
+	FailOnAnyIssue                     types.Bool `tfsdk:"fail_on_any_issue"`
+	FailOnlyForHighAndCriticalSeverity types.Bool `tfsdk:"fail_only_for_high_and_critical_severity"`
+	FailOnlyOnIssuesWithFix            types.Bool `tfsdk:"fail_only_on_issues_with_fix"`
 }
 
 func (r integrationResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
@@ -212,6 +265,29 @@ func (r integrationResource) Create(ctx context.Context, request resource.Create
 		result.ID = types.String{Value: integration.ID}
 	}
 
+	if plan.PullRequestTesting != nil {
+		updateRequest := &snyk.IntegrationSettingsUpdateRequest{
+			IntegrationSettings: &snyk.IntegrationSettings{
+				PullRequestTestEnabled:                        toBoolPtr(plan.PullRequestTesting.Enabled),
+				PullRequestFailOnAnyVulnerability:             toBoolPtr(plan.PullRequestTesting.FailOnAnyIssue),
+				PullRequestFailOnlyForHighAndCriticalSeverity: toBoolPtr(plan.PullRequestTesting.FailOnlyForHighAndCriticalSeverity),
+				PullRequestFailOnlyForIssuesWithFix:           toBoolPtr(plan.PullRequestTesting.FailOnlyOnIssuesWithFix),
+			},
+		}
+
+		settings, _, err := r.p.client.Integrations.UpdateSettings(ctx, orgID, result.ID.Value, updateRequest)
+		if err != nil {
+			response.Diagnostics.AddError("Error updating pull request settings", err.Error())
+			return
+		}
+		result.PullRequestTesting = &pullRequestTesting{
+			Enabled:                            fromBoolPtr(settings.PullRequestTestEnabled),
+			FailOnAnyIssue:                     fromBoolPtr(settings.PullRequestFailOnAnyVulnerability),
+			FailOnlyForHighAndCriticalSeverity: fromBoolPtr(settings.PullRequestFailOnlyForHighAndCriticalSeverity),
+			FailOnlyOnIssuesWithFix:            fromBoolPtr(settings.PullRequestFailOnlyForIssuesWithFix),
+		}
+	}
+
 	diags = response.State.Set(ctx, result)
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
@@ -233,6 +309,22 @@ func (r integrationResource) Read(ctx context.Context, request resource.ReadRequ
 	if err != nil {
 		response.Diagnostics.AddError("Error reading integration", err.Error())
 		return
+	}
+
+	if state.PullRequestTesting != nil {
+		settings, _, err := r.p.client.Integrations.GetSettings(ctx, organizationID, integration.ID)
+		if err != nil {
+			response.Diagnostics.AddError("Error reading integration settings", err.Error())
+			return
+		}
+
+		pullRequestTesting := &pullRequestTesting{
+			Enabled:                            fromBoolPtr(settings.PullRequestTestEnabled),
+			FailOnAnyIssue:                     fromBoolPtr(settings.PullRequestFailOnAnyVulnerability),
+			FailOnlyForHighAndCriticalSeverity: fromBoolPtr(settings.PullRequestFailOnlyForHighAndCriticalSeverity),
+			FailOnlyOnIssuesWithFix:            fromBoolPtr(settings.PullRequestFailOnlyForIssuesWithFix),
+		}
+		state.PullRequestTesting = pullRequestTesting
 	}
 
 	state.ID = types.String{Value: integration.ID}
@@ -273,6 +365,29 @@ func (r integrationResource) Update(ctx context.Context, request resource.Update
 	if err != nil {
 		response.Diagnostics.AddError("Error updating integration", err.Error())
 		return
+	}
+
+	if plan.PullRequestTesting != nil {
+		updateRequest := &snyk.IntegrationSettingsUpdateRequest{
+			IntegrationSettings: &snyk.IntegrationSettings{
+				PullRequestTestEnabled:                        toBoolPtr(plan.PullRequestTesting.Enabled),
+				PullRequestFailOnAnyVulnerability:             toBoolPtr(plan.PullRequestTesting.FailOnAnyIssue),
+				PullRequestFailOnlyForHighAndCriticalSeverity: toBoolPtr(plan.PullRequestTesting.FailOnlyForHighAndCriticalSeverity),
+				PullRequestFailOnlyForIssuesWithFix:           toBoolPtr(plan.PullRequestTesting.FailOnlyOnIssuesWithFix),
+			},
+		}
+
+		settings, _, err := r.p.client.Integrations.UpdateSettings(ctx, organizationID, integrationID, updateRequest)
+		if err != nil {
+			response.Diagnostics.AddError("Error updating pull request settings", err.Error())
+			return
+		}
+		plan.PullRequestTesting = &pullRequestTesting{
+			Enabled:                            fromBoolPtr(settings.PullRequestTestEnabled),
+			FailOnAnyIssue:                     fromBoolPtr(settings.PullRequestFailOnAnyVulnerability),
+			FailOnlyForHighAndCriticalSeverity: fromBoolPtr(settings.PullRequestFailOnlyForHighAndCriticalSeverity),
+			FailOnlyOnIssuesWithFix:            fromBoolPtr(settings.PullRequestFailOnlyForIssuesWithFix),
+		}
 	}
 
 	plan.ID = types.String{Value: integration.ID}
