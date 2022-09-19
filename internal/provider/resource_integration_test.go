@@ -35,14 +35,14 @@ func TestAccResourceIntegration_basic(t *testing.T) {
 					testAccCheckResourceIntegrationExists("snyk_integration.test", organizationName, &integration),
 					resource.TestCheckResourceAttrSet("snyk_integration.test", "id"),
 					resource.TestCheckResourceAttr("snyk_integration.test", "type", "gitlab"),
-					resource.TestCheckNoResourceAttr("snyk_integration.test", "pull_request_testing.enabled"),
+					resource.TestCheckNoResourceAttr("snyk_integration.test", "pull_request_sca.enabled"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccResourceIntegration_pullRequestTesting(t *testing.T) {
+func TestAccResourceIntegration_pullRequestSCA(t *testing.T) {
 	t.Parallel()
 
 	var integration snyk.Integration
@@ -55,12 +55,12 @@ func TestAccResourceIntegration_pullRequestTesting(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceIntegrationConfigWithPullRequestTesting(organizationName, groupID, token),
+				Config: testAccResourceIntegrationConfigWithPullRequestSCA(organizationName, groupID, token),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckResourceIntegrationExists("snyk_integration.test", organizationName, &integration),
-					resource.TestCheckResourceAttrSet("snyk_integration.test", "pull_request_testing.enabled"),
-					resource.TestCheckResourceAttr("snyk_integration.test", "pull_request_testing.fail_on_any_issue", "true"),
-					resource.TestCheckResourceAttr("snyk_integration.test", "pull_request_testing.fail_only_on_issues_with_fix", "false"),
+					resource.TestCheckResourceAttrSet("snyk_integration.test", "pull_request_sca.enabled"),
+					resource.TestCheckResourceAttr("snyk_integration.test", "pull_request_sca.fail_on_any_issue", "true"),
+					resource.TestCheckResourceAttr("snyk_integration.test", "pull_request_sca.fail_only_on_issues_with_fix", "false"),
 				),
 			},
 		},
@@ -128,7 +128,7 @@ resource "snyk_integration" "test" {
 `, organizationName, groupID, token)
 }
 
-func testAccResourceIntegrationConfigWithPullRequestTesting(organizationName, groupID, token string) string {
+func testAccResourceIntegrationConfigWithPullRequestSCA(organizationName, groupID, token string) string {
 	return fmt.Sprintf(`
 resource "snyk_organization" "test" {
   name = "%s"
@@ -141,7 +141,7 @@ resource "snyk_integration" "test" {
   url   = "https://testing.gitlab.local"
   token = "%s"
 
-  pull_request_testing = {
+  pull_request_sca = {
     enabled = true
 
     fail_on_any_issue            = true

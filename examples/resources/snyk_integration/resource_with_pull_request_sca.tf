@@ -4,7 +4,7 @@ resource "snyk_integration" "github" {
   type  = "github"
   token = "rotated-github-secret-token"
 
-  pull_request_testing = {
+  pull_request_sca = {
     enabled = true
 
     fail_on_any_issue            = false
