@@ -271,7 +271,7 @@ func (r integrationResource) Create(ctx context.Context, request resource.Create
 		updateRequest := &snyk.IntegrationSettingsUpdateRequest{
 			IntegrationSettings: &snyk.IntegrationSettings{
 				PullRequestTestEnabled:                        toBoolPtr(plan.PullRequestSCA.Enabled),
-				PullRequestFailOnAnyVulnerability:             toBoolPtr(plan.PullRequestSCA.FailOnAnyIssue),
+				PullRequestFailOnAnyIssue:                     toBoolPtr(plan.PullRequestSCA.FailOnAnyIssue),
 				PullRequestFailOnlyForHighAndCriticalSeverity: toBoolPtr(plan.PullRequestSCA.FailOnlyForHighAndCriticalSeverity),
 				PullRequestFailOnlyForIssuesWithFix:           toBoolPtr(plan.PullRequestSCA.FailOnlyOnIssuesWithFix),
 			},
@@ -284,7 +284,7 @@ func (r integrationResource) Create(ctx context.Context, request resource.Create
 		}
 		result.PullRequestSCA = &pullRequestSCA{
 			Enabled:                            fromBoolPtr(settings.PullRequestTestEnabled),
-			FailOnAnyIssue:                     fromBoolPtr(settings.PullRequestFailOnAnyVulnerability),
+			FailOnAnyIssue:                     fromBoolPtr(settings.PullRequestFailOnAnyIssue),
 			FailOnlyForHighAndCriticalSeverity: fromBoolPtr(settings.PullRequestFailOnlyForHighAndCriticalSeverity),
 			FailOnlyOnIssuesWithFix:            fromBoolPtr(settings.PullRequestFailOnlyForIssuesWithFix),
 		}
@@ -322,7 +322,7 @@ func (r integrationResource) Read(ctx context.Context, request resource.ReadRequ
 
 		pullRequestSCA := &pullRequestSCA{
 			Enabled:                            fromBoolPtr(settings.PullRequestTestEnabled),
-			FailOnAnyIssue:                     fromBoolPtr(settings.PullRequestFailOnAnyVulnerability),
+			FailOnAnyIssue:                     fromBoolPtr(settings.PullRequestFailOnAnyIssue),
 			FailOnlyForHighAndCriticalSeverity: fromBoolPtr(settings.PullRequestFailOnlyForHighAndCriticalSeverity),
 			FailOnlyOnIssuesWithFix:            fromBoolPtr(settings.PullRequestFailOnlyForIssuesWithFix),
 		}
@@ -373,7 +373,7 @@ func (r integrationResource) Update(ctx context.Context, request resource.Update
 		updateRequest := &snyk.IntegrationSettingsUpdateRequest{
 			IntegrationSettings: &snyk.IntegrationSettings{
 				PullRequestTestEnabled:                        toBoolPtr(plan.PullRequestSCA.Enabled),
-				PullRequestFailOnAnyVulnerability:             toBoolPtr(plan.PullRequestSCA.FailOnAnyIssue),
+				PullRequestFailOnAnyIssue:                     toBoolPtr(plan.PullRequestSCA.FailOnAnyIssue),
 				PullRequestFailOnlyForHighAndCriticalSeverity: toBoolPtr(plan.PullRequestSCA.FailOnlyForHighAndCriticalSeverity),
 				PullRequestFailOnlyForIssuesWithFix:           toBoolPtr(plan.PullRequestSCA.FailOnlyOnIssuesWithFix),
 			},
@@ -386,7 +386,7 @@ func (r integrationResource) Update(ctx context.Context, request resource.Update
 		}
 		plan.PullRequestSCA = &pullRequestSCA{
 			Enabled:                            fromBoolPtr(settings.PullRequestTestEnabled),
-			FailOnAnyIssue:                     fromBoolPtr(settings.PullRequestFailOnAnyVulnerability),
+			FailOnAnyIssue:                     fromBoolPtr(settings.PullRequestFailOnAnyIssue),
 			FailOnlyForHighAndCriticalSeverity: fromBoolPtr(settings.PullRequestFailOnlyForHighAndCriticalSeverity),
 			FailOnlyOnIssuesWithFix:            fromBoolPtr(settings.PullRequestFailOnlyForIssuesWithFix),
 		}
