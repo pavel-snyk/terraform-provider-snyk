@@ -1,4 +1,11 @@
 
+<a name="v0.6.1"></a>
+## v0.6.1 (2022-09-19)
+### Code Refactoring
+* **snyk_integration**: rename pull_request_testing attribute to pull_request_sca
+### Documentation
+* fix provider version in example snippet
+
 <a name="v0.6.0"></a>
 ## v0.6.0 (2022-09-18)
 ### Features
