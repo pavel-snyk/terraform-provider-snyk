@@ -15,8 +15,6 @@ import (
 )
 
 func TestAccResourceOrganization_basic(t *testing.T) {
-	t.Parallel()
-
 	var organization snyk.Organization
 	organizationName := fmt.Sprintf("tf-test-acc_%s", acctest.RandString(10))
 	groupID := os.Getenv("SNYK_GROUP_ID")

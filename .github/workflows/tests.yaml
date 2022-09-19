@@ -75,6 +75,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         terraform-version:
           - "1.0.*"
