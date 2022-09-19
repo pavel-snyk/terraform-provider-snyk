@@ -14,8 +14,6 @@ import (
 )
 
 func TestAccResourceIntegration_basic(t *testing.T) {
-	t.Parallel()
-
 	var integration snyk.Integration
 	organizationName := fmt.Sprintf("tf-test-acc_%s", acctest.RandString(10))
 	groupID := os.Getenv("SNYK_GROUP_ID")
@@ -43,8 +41,6 @@ func TestAccResourceIntegration_basic(t *testing.T) {
 }
 
 func TestAccResourceIntegration_pullRequestSCA(t *testing.T) {
-	t.Parallel()
-
 	var integration snyk.Integration
 	organizationName := fmt.Sprintf("tf-test-acc_%s", acctest.RandString(10))
 	groupID := os.Getenv("SNYK_GROUP_ID")
