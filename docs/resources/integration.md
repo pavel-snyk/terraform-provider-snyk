@@ -23,7 +23,7 @@ resource "snyk_integration" "gitlab" {
 }
 ```
 
-### Using Pull Request Testing
+### Using Pull Request SCA
 
 ```terraform
 resource "snyk_integration" "github" {
@@ -32,7 +32,7 @@ resource "snyk_integration" "github" {
   type  = "github"
   token = "rotated-github-secret-token"
 
-  pull_request_testing = {
+  pull_request_sca = {
     enabled = true
 
     fail_on_any_issue            = false
@@ -52,7 +52,7 @@ resource "snyk_integration" "github" {
 ### Optional
 
 - `password` (String, Sensitive) The password used by the integration.
-- `pull_request_testing` (Attributes) Pull request tests settings applied whenever a new PR is opened. (see [below for nested schema](#nestedatt--pull_request_testing))
+- `pull_request_sca` (Attributes) The pull request testing configuration for SCA (Software Composition Analysis). Snyk will checks projects imported through the SCM integration for security and license issues whenever a new PR is opened. (see [below for nested schema](#nestedatt--pull_request_sca))
 - `region` (String) The region used by the integration.
 - `registry_url` (String) The URL for container registries used by the integration (e.g. for ECR).
 - `role_arn` (String) The role ARN used by the integration (ECR only).
@@ -64,12 +64,12 @@ resource "snyk_integration" "github" {
 
 - `id` (String) The ID of the integration.
 
-<a id="nestedatt--pull_request_testing"></a>
-### Nested Schema for `pull_request_testing`
+<a id="nestedatt--pull_request_sca"></a>
+### Nested Schema for `pull_request_sca`
 
 Optional:
 
-- `enabled` (Boolean) Denotes the pull request testing feature should be enabled for this integration.
+- `enabled` (Boolean) Denotes the pull request SCA feature should be enabled for this integration.
 - `fail_on_any_issue` (Boolean) Fails an opened pull request if any vulnerable dependencies have been detected, otherwise the pull request should only fail when a dependency with issues is added.
 - `fail_only_for_high_and_critical_severity` (Boolean) Fails an opened pull request if any dependencies are marked as being of high or critical severity.
 - `fail_only_on_issues_with_fix` (Boolean) Fails an opened pull request only when issues found have a fix available.
