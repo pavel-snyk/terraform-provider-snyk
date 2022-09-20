@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -43,6 +45,60 @@ func (r integrationResourceType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 					resource.UseStateForUnknown(),
 				},
 				Type: types.StringType,
+			},
+			"pull_request_dependency_upgrade": {
+				Description: "The pull request configuration for dependency upgrades. Snyk can automatically raise pull " +
+					"requests to update out-of-date dependencies.",
+				Optional: true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
+				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					"enabled": {
+						Description: "Denotes the pull request automatic dependency upgrade feature should be enabled for this " +
+							"integration",
+						Computed: true,
+						Optional: true,
+						PlanModifiers: tfsdk.AttributePlanModifiers{
+							resource.UseStateForUnknown(),
+						},
+						Type: types.BoolType,
+					},
+					"ignored_dependencies": {
+						Description: "List of exact names of the dependencies that should not be included in the automatic upgrade " +
+							"operation. You can use only enter lowercase letters.",
+						Computed: true,
+						Optional: true,
+						PlanModifiers: tfsdk.AttributePlanModifiers{
+							resource.UseStateForUnknown(),
+						},
+						Type: types.ListType{
+							ElemType: types.StringType,
+						},
+					},
+					"include_major_version": {
+						Description: "Defines if major version upgrades will be included in the recommendations. By default, " +
+							"only patches and minor versions are included in the upgrade recommendations.",
+						Computed: true,
+						Optional: true,
+						PlanModifiers: tfsdk.AttributePlanModifiers{
+							resource.UseStateForUnknown(),
+						},
+						Type: types.BoolType,
+					},
+					"limit": {
+						Description: "The maximum number of simultaneously opened pull requests with dependency upgrades.",
+						Computed:    true,
+						Optional:    true,
+						Validators: []tfsdk.AttributeValidator{
+							int64validator.Between(1, 10),
+						},
+						PlanModifiers: tfsdk.AttributePlanModifiers{
+							resource.UseStateForUnknown(),
+						},
+						Type: types.Int64Type,
+					},
+				}),
 			},
 			"pull_request_sca": {
 				Description: "The pull request testing configuration for SCA (Software Composition Analysis). Snyk will checks " +
@@ -164,17 +220,25 @@ type integrationResource struct {
 }
 
 type integrationData struct {
-	ID             types.String    `tfsdk:"id"`
-	OrganizationID types.String    `tfsdk:"organization_id"`
-	Password       types.String    `tfsdk:"password"`
-	PullRequestSCA *pullRequestSCA `tfsdk:"pull_request_sca"`
-	Region         types.String    `tfsdk:"region"`
-	RegistryURL    types.String    `tfsdk:"registry_url"`
-	RoleARN        types.String    `tfsdk:"role_arn"`
-	Token          types.String    `tfsdk:"token"`
-	Type           types.String    `tfsdk:"type"`
-	URL            types.String    `tfsdk:"url"`
-	Username       types.String    `tfsdk:"username"`
+	ID                           types.String                  `tfsdk:"id"`
+	OrganizationID               types.String                  `tfsdk:"organization_id"`
+	Password                     types.String                  `tfsdk:"password"`
+	PullRequestDependencyUpgrade *pullRequestDependencyUpgrade `tfsdk:"pull_request_dependency_upgrade"`
+	PullRequestSCA               *pullRequestSCA               `tfsdk:"pull_request_sca"`
+	Region                       types.String                  `tfsdk:"region"`
+	RegistryURL                  types.String                  `tfsdk:"registry_url"`
+	RoleARN                      types.String                  `tfsdk:"role_arn"`
+	Token                        types.String                  `tfsdk:"token"`
+	Type                         types.String                  `tfsdk:"type"`
+	URL                          types.String                  `tfsdk:"url"`
+	Username                     types.String                  `tfsdk:"username"`
+}
+
+type pullRequestDependencyUpgrade struct {
+	Enabled             types.Bool  `tfsdk:"enabled"`
+	IgnoredDependencies types.List  `tfsdk:"ignored_dependencies"`
+	IncludeMajorVersion types.Bool  `tfsdk:"include_major_version"`
+	Limit               types.Int64 `tfsdk:"limit"`
 }
 
 type pullRequestSCA struct {
@@ -290,6 +354,42 @@ func (r integrationResource) Create(ctx context.Context, request resource.Create
 		}
 	}
 
+	if plan.PullRequestDependencyUpgrade != nil {
+		var ignoredDependenciesForCreate []string
+		diags = plan.PullRequestDependencyUpgrade.IgnoredDependencies.ElementsAs(ctx, &ignoredDependenciesForCreate, false)
+		response.Diagnostics.Append(diags...)
+		if response.Diagnostics.HasError() {
+			return
+		}
+
+		updateRequest := &snyk.IntegrationSettingsUpdateRequest{
+			IntegrationSettings: &snyk.IntegrationSettings{
+				DependencyAutoUpgradeEnabled:             toBoolPtr(plan.PullRequestDependencyUpgrade.Enabled),
+				DependencyAutoUpgradeIgnoredDependencies: ignoredDependenciesForCreate,
+				DependencyAutoUpgradeIncludeMajorVersion: toBoolPtr(plan.PullRequestDependencyUpgrade.IncludeMajorVersion),
+				DependencyAutoUpgradePullRequestLimit:    plan.PullRequestDependencyUpgrade.Limit.Value,
+			},
+		}
+
+		settings, _, err := r.p.client.Integrations.UpdateSettings(ctx, orgID, result.ID.Value, updateRequest)
+		if err != nil {
+			response.Diagnostics.AddError("Error updating pull request settings", err.Error())
+			return
+		}
+
+		ignoredDependenciesToRead := make([]attr.Value, len(settings.DependencyAutoUpgradeIgnoredDependencies))
+		for i, ignoredDependency := range settings.DependencyAutoUpgradeIgnoredDependencies {
+			ignoredDependenciesToRead[i] = types.String{Value: ignoredDependency}
+		}
+
+		result.PullRequestDependencyUpgrade = &pullRequestDependencyUpgrade{
+			Enabled:             fromBoolPtr(settings.DependencyAutoUpgradeEnabled),
+			IgnoredDependencies: types.List{ElemType: types.StringType, Elems: ignoredDependenciesToRead},
+			IncludeMajorVersion: fromBoolPtr(settings.DependencyAutoUpgradeIncludeMajorVersion),
+			Limit:               types.Int64{Value: settings.DependencyAutoUpgradePullRequestLimit},
+		}
+	}
+
 	diags = response.State.Set(ctx, result)
 	response.Diagnostics.Append(diags...)
 	if response.Diagnostics.HasError() {
@@ -327,6 +427,27 @@ func (r integrationResource) Read(ctx context.Context, request resource.ReadRequ
 			FailOnlyOnIssuesWithFix:            fromBoolPtr(settings.PullRequestFailOnlyForIssuesWithFix),
 		}
 		state.PullRequestSCA = pullRequestSCA
+	}
+
+	if state.PullRequestDependencyUpgrade != nil {
+		settings, _, err := r.p.client.Integrations.GetSettings(ctx, organizationID, integration.ID)
+		if err != nil {
+			response.Diagnostics.AddError("Error reading integration settings", err.Error())
+			return
+		}
+
+		ignoredDependenciesToRead := make([]attr.Value, len(settings.DependencyAutoUpgradeIgnoredDependencies))
+		for i, ignoredDependency := range settings.DependencyAutoUpgradeIgnoredDependencies {
+			ignoredDependenciesToRead[i] = types.String{Value: ignoredDependency}
+		}
+
+		pullRequestDependencyUpgrade := &pullRequestDependencyUpgrade{
+			Enabled:             fromBoolPtr(settings.DependencyAutoUpgradeEnabled),
+			IncludeMajorVersion: fromBoolPtr(settings.DependencyAutoUpgradeIncludeMajorVersion),
+			IgnoredDependencies: types.List{ElemType: types.StringType, Elems: ignoredDependenciesToRead},
+			Limit:               types.Int64{Value: settings.DependencyAutoUpgradePullRequestLimit},
+		}
+		state.PullRequestDependencyUpgrade = pullRequestDependencyUpgrade
 	}
 
 	state.ID = types.String{Value: integration.ID}
@@ -389,6 +510,42 @@ func (r integrationResource) Update(ctx context.Context, request resource.Update
 			FailOnAnyIssue:                     fromBoolPtr(settings.PullRequestFailOnAnyIssue),
 			FailOnlyForHighAndCriticalSeverity: fromBoolPtr(settings.PullRequestFailOnlyForHighAndCriticalSeverity),
 			FailOnlyOnIssuesWithFix:            fromBoolPtr(settings.PullRequestFailOnlyForIssuesWithFix),
+		}
+	}
+
+	if plan.PullRequestDependencyUpgrade != nil {
+		var ignoredDependenciesForCreate []string
+		diags = plan.PullRequestDependencyUpgrade.IgnoredDependencies.ElementsAs(ctx, &ignoredDependenciesForCreate, false)
+		response.Diagnostics.Append(diags...)
+		if response.Diagnostics.HasError() {
+			return
+		}
+
+		updateRequest := &snyk.IntegrationSettingsUpdateRequest{
+			IntegrationSettings: &snyk.IntegrationSettings{
+				DependencyAutoUpgradeEnabled:             toBoolPtr(plan.PullRequestDependencyUpgrade.Enabled),
+				DependencyAutoUpgradeIgnoredDependencies: ignoredDependenciesForCreate,
+				DependencyAutoUpgradeIncludeMajorVersion: toBoolPtr(plan.PullRequestDependencyUpgrade.IncludeMajorVersion),
+				DependencyAutoUpgradePullRequestLimit:    plan.PullRequestDependencyUpgrade.Limit.Value,
+			},
+		}
+
+		settings, _, err := r.p.client.Integrations.UpdateSettings(ctx, organizationID, integrationID, updateRequest)
+		if err != nil {
+			response.Diagnostics.AddError("Error updating pull request settings", err.Error())
+			return
+		}
+
+		ignoredDependenciesToRead := make([]attr.Value, len(settings.DependencyAutoUpgradeIgnoredDependencies))
+		for i, ignoredDependency := range settings.DependencyAutoUpgradeIgnoredDependencies {
+			ignoredDependenciesToRead[i] = types.String{Value: ignoredDependency}
+		}
+
+		plan.PullRequestDependencyUpgrade = &pullRequestDependencyUpgrade{
+			Enabled:             fromBoolPtr(settings.DependencyAutoUpgradeEnabled),
+			IgnoredDependencies: types.List{ElemType: types.StringType, Elems: ignoredDependenciesToRead},
+			IncludeMajorVersion: fromBoolPtr(settings.DependencyAutoUpgradeIncludeMajorVersion),
+			Limit:               types.Int64{Value: settings.DependencyAutoUpgradePullRequestLimit},
 		}
 	}
 
