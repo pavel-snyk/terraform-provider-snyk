@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -17,9 +16,21 @@ import (
 	"github.com/pavel-snyk/terraform-provider-snyk/internal/validators"
 )
 
-type integrationResourceType struct{}
+var _ resource.Resource = (*integrationResource)(nil)
 
-func (r integrationResourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+type integrationResource struct {
+	client *snyk.Client
+}
+
+func NewIntegrationResource() resource.Resource {
+	return &integrationResource{}
+}
+
+func (r *integrationResource) Metadata(_ context.Context, _ resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = "snyk_integration"
+}
+
+func (r *integrationResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "The integration resource allows you to manage Snyk integration.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -209,14 +220,13 @@ func (r integrationResourceType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 	}, nil
 }
 
-func (r integrationResourceType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return integrationResource{
-		p: p.(*snykProvider),
-	}, nil
-}
+func (r *integrationResource) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
 
-type integrationResource struct {
-	p *snykProvider
+	client := request.ProviderData.(*snyk.Client)
+	r.client = client
 }
 
 type integrationData struct {
@@ -248,7 +258,7 @@ type pullRequestSCA struct {
 	FailOnlyOnIssuesWithFix            types.Bool `tfsdk:"fail_only_on_issues_with_fix"`
 }
 
-func (r integrationResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+func (r *integrationResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var plan integrationData
 	diags := request.Plan.Get(ctx, &plan)
 	response.Diagnostics.Append(diags...)
@@ -257,7 +267,7 @@ func (r integrationResource) Create(ctx context.Context, request resource.Create
 	}
 
 	orgID := plan.OrganizationID.Value
-	integrations, _, err := r.p.client.Integrations.List(ctx, orgID)
+	integrations, _, err := r.client.Integrations.List(ctx, orgID)
 	if err != nil {
 		response.Diagnostics.AddError("Error reading integrations", err.Error())
 		return
@@ -300,7 +310,7 @@ func (r integrationResource) Create(ctx context.Context, request resource.Create
 			},
 		}
 		tflog.Trace(ctx, "integrationResource.Create(create)", map[string]interface{}{"payload": createRequest})
-		integration, _, err := r.p.client.Integrations.Create(ctx, orgID, createRequest)
+		integration, _, err := r.client.Integrations.Create(ctx, orgID, createRequest)
 		if err != nil {
 			response.Diagnostics.AddError("Error creating integration", err.Error())
 			return
@@ -323,7 +333,7 @@ func (r integrationResource) Create(ctx context.Context, request resource.Create
 			},
 		}
 		tflog.Trace(ctx, "integrationResource.Create(update)", map[string]interface{}{"payload": updateRequest})
-		integration, _, err := r.p.client.Integrations.Update(ctx, orgID, integrationID, updateRequest)
+		integration, _, err := r.client.Integrations.Update(ctx, orgID, integrationID, updateRequest)
 		if err != nil {
 			response.Diagnostics.AddError("Error updating integration", err.Error())
 			return
@@ -341,7 +351,7 @@ func (r integrationResource) Create(ctx context.Context, request resource.Create
 			},
 		}
 
-		settings, _, err := r.p.client.Integrations.UpdateSettings(ctx, orgID, result.ID.Value, updateRequest)
+		settings, _, err := r.client.Integrations.UpdateSettings(ctx, orgID, result.ID.Value, updateRequest)
 		if err != nil {
 			response.Diagnostics.AddError("Error updating pull request settings", err.Error())
 			return
@@ -371,7 +381,7 @@ func (r integrationResource) Create(ctx context.Context, request resource.Create
 			},
 		}
 
-		settings, _, err := r.p.client.Integrations.UpdateSettings(ctx, orgID, result.ID.Value, updateRequest)
+		settings, _, err := r.client.Integrations.UpdateSettings(ctx, orgID, result.ID.Value, updateRequest)
 		if err != nil {
 			response.Diagnostics.AddError("Error updating pull request settings", err.Error())
 			return
@@ -397,7 +407,7 @@ func (r integrationResource) Create(ctx context.Context, request resource.Create
 	}
 }
 
-func (r integrationResource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (r *integrationResource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var state integrationData
 	diags := request.State.Get(ctx, &state)
 	response.Diagnostics.Append(diags...)
@@ -407,14 +417,14 @@ func (r integrationResource) Read(ctx context.Context, request resource.ReadRequ
 
 	organizationID := state.OrganizationID.Value
 
-	integration, _, err := r.p.client.Integrations.GetByType(ctx, organizationID, snyk.IntegrationType(state.Type.Value))
+	integration, _, err := r.client.Integrations.GetByType(ctx, organizationID, snyk.IntegrationType(state.Type.Value))
 	if err != nil {
 		response.Diagnostics.AddError("Error reading integration", err.Error())
 		return
 	}
 
 	if state.PullRequestSCA != nil {
-		settings, _, err := r.p.client.Integrations.GetSettings(ctx, organizationID, integration.ID)
+		settings, _, err := r.client.Integrations.GetSettings(ctx, organizationID, integration.ID)
 		if err != nil {
 			response.Diagnostics.AddError("Error reading integration settings", err.Error())
 			return
@@ -430,7 +440,7 @@ func (r integrationResource) Read(ctx context.Context, request resource.ReadRequ
 	}
 
 	if state.PullRequestDependencyUpgrade != nil {
-		settings, _, err := r.p.client.Integrations.GetSettings(ctx, organizationID, integration.ID)
+		settings, _, err := r.client.Integrations.GetSettings(ctx, organizationID, integration.ID)
 		if err != nil {
 			response.Diagnostics.AddError("Error reading integration settings", err.Error())
 			return
@@ -459,7 +469,7 @@ func (r integrationResource) Read(ctx context.Context, request resource.ReadRequ
 	}
 }
 
-func (r integrationResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+func (r *integrationResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 	var plan integrationData
 	diags := request.Plan.Get(ctx, &plan)
 	response.Diagnostics.Append(diags...)
@@ -484,7 +494,7 @@ func (r integrationResource) Update(ctx context.Context, request resource.Update
 		},
 	}
 	tflog.Info(ctx, "integrationResource.Update", map[string]interface{}{"payload": updateRequest})
-	integration, _, err := r.p.client.Integrations.Update(ctx, organizationID, integrationID, updateRequest)
+	integration, _, err := r.client.Integrations.Update(ctx, organizationID, integrationID, updateRequest)
 	if err != nil {
 		response.Diagnostics.AddError("Error updating integration", err.Error())
 		return
@@ -500,7 +510,7 @@ func (r integrationResource) Update(ctx context.Context, request resource.Update
 			},
 		}
 
-		settings, _, err := r.p.client.Integrations.UpdateSettings(ctx, organizationID, integrationID, updateRequest)
+		settings, _, err := r.client.Integrations.UpdateSettings(ctx, organizationID, integrationID, updateRequest)
 		if err != nil {
 			response.Diagnostics.AddError("Error updating pull request settings", err.Error())
 			return
@@ -530,7 +540,7 @@ func (r integrationResource) Update(ctx context.Context, request resource.Update
 			},
 		}
 
-		settings, _, err := r.p.client.Integrations.UpdateSettings(ctx, organizationID, integrationID, updateRequest)
+		settings, _, err := r.client.Integrations.UpdateSettings(ctx, organizationID, integrationID, updateRequest)
 		if err != nil {
 			response.Diagnostics.AddError("Error updating pull request settings", err.Error())
 			return
@@ -558,7 +568,7 @@ func (r integrationResource) Update(ctx context.Context, request resource.Update
 	}
 }
 
-func (r integrationResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+func (r *integrationResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var state integrationData
 	diags := request.State.Get(ctx, &state)
 	response.Diagnostics.Append(diags...)
@@ -569,7 +579,7 @@ func (r integrationResource) Delete(ctx context.Context, request resource.Delete
 	integrationID := state.ID.Value
 	organizationID := state.OrganizationID.Value
 
-	_, err := r.p.client.Integrations.DeleteCredentials(ctx, organizationID, integrationID)
+	_, err := r.client.Integrations.DeleteCredentials(ctx, organizationID, integrationID)
 	if err != nil {
 		response.Diagnostics.AddError("Error deleting integration", err.Error())
 		return

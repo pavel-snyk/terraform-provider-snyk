@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/pavel-snyk/snyk-sdk-go/snyk"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,6 +17,20 @@ var testAccProviderFactories = map[string]func() (tfprotov6.ProviderServer, erro
 	"snyk": func() (tfprotov6.ProviderServer, error) {
 		return providerserver.NewProtocol6WithError(testAccProvider)()
 	},
+}
+var snykClient *snyk.Client
+
+func testSnykClient() *snyk.Client {
+	if snykClient == nil {
+		endpoint := os.Getenv("SNYK_ENDPOINT")
+		token := os.Getenv("SNYK_TOKEN")
+
+		snykClient = snyk.NewClient(token,
+			snyk.WithBaseURL(endpoint),
+			snyk.WithUserAgent(testAccProvider.(*snykProvider).userAgent()),
+		)
+	}
+	return snykClient
 }
 
 func testAccPreCheck(t *testing.T) {

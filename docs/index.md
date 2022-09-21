@@ -43,5 +43,5 @@ provider "snyk" {
 
 ### Optional
 
-- `endpoint` (String) This can be used to override the base URL for Snyk API requests.
-- `token` (String, Sensitive) This is the API token from Snyk. It must be provided, but it can also be sourced from the `SNYK_TOKEN` environment variable
+- `endpoint` (String) This can be used to override the base URL for Snyk API requests. It can be also sourced from the `SNYK_ENDPOINT` environment variable.
+- `token` (String, Sensitive) This is the API token from Snyk. It must be provided, but it can also be sourced from the `SNYK_TOKEN` environment variable.

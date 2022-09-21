@@ -5,16 +5,28 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/pavel-snyk/snyk-sdk-go/snyk"
 
 	"github.com/pavel-snyk/terraform-provider-snyk/internal/validators"
 )
 
-type projectDataSourceType struct{}
+var _ datasource.DataSource = (*projectDataSource)(nil)
 
-func (d projectDataSourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+type projectDataSource struct {
+	client *snyk.Client
+}
+
+func NewProjectDataSource() datasource.DataSource {
+	return &projectDataSource{}
+}
+
+func (d *projectDataSource) Metadata(_ context.Context, _ datasource.MetadataRequest, response *datasource.MetadataResponse) {
+	response.TypeName = "snyk_project"
+}
+
+func (d *projectDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "The project data source provides information about an existing Snyk project.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -43,14 +55,13 @@ func (d projectDataSourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 	}, nil
 }
 
-func (d projectDataSourceType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return projectDataSource{
-		p: p.(*snykProvider),
-	}, nil
-}
+func (d *projectDataSource) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
 
-type projectDataSource struct {
-	p *snykProvider
+	client := request.ProviderData.(*snyk.Client)
+	d.client = client
 }
 
 type projectData struct {
@@ -59,7 +70,7 @@ type projectData struct {
 	OrganizationID types.String `tfsdk:"organization_id"`
 }
 
-func (d projectDataSource) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
+func (d *projectDataSource) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
 	var data projectData
 	diags := request.Config.Get(ctx, &data)
 	response.Diagnostics.Append(diags...)
@@ -67,7 +78,7 @@ func (d projectDataSource) Read(ctx context.Context, request datasource.ReadRequ
 		return
 	}
 
-	projects, _, err := d.p.client.Projects.List(ctx, data.OrganizationID.Value)
+	projects, _, err := d.client.Projects.List(ctx, data.OrganizationID.Value)
 	if err != nil {
 		response.Diagnostics.AddError("Error getting projects", err.Error())
 		return

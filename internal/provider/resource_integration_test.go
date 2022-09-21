@@ -72,7 +72,7 @@ func testAccCheckResourceIntegrationExists(resourceName, organizationName string
 			return fmt.Errorf("integration ID is not set")
 		}
 
-		client := testAccProvider.(*snykProvider).client
+		client := testSnykClient()
 		orgs, _, err := client.Orgs.List(context.Background())
 		if err != nil {
 			return err
