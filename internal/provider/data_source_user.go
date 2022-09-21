@@ -5,14 +5,26 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/pavel-snyk/snyk-sdk-go/snyk"
 )
 
-type userDataSourceType struct{}
+var _ datasource.DataSource = (*userDataSource)(nil)
 
-func (d userDataSourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+type userDataSource struct {
+	client *snyk.Client
+}
+
+func NewUserDataSource() datasource.DataSource {
+	return &userDataSource{}
+}
+
+func (d *userDataSource) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
+	response.TypeName = "snyk_user"
+}
+
+func (d *userDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "The user data source provides information about an existing Snyk user.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -41,14 +53,13 @@ func (d userDataSourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 	}, nil
 }
 
-func (d userDataSourceType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return userDataSource{
-		p: p.(*snykProvider),
-	}, nil
-}
+func (d *userDataSource) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
 
-type userDataSource struct {
-	p *snykProvider
+	client := request.ProviderData.(*snyk.Client)
+	d.client = client
 }
 
 type userData struct {
@@ -58,7 +69,7 @@ type userData struct {
 	Username types.String `tfsdk:"username"`
 }
 
-func (d userDataSource) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
+func (d *userDataSource) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
 	var uData userData
 	if diags := request.Config.Get(ctx, &uData); diags.HasError() {
 		response.Diagnostics = diags
@@ -66,7 +77,7 @@ func (d userDataSource) Read(ctx context.Context, request datasource.ReadRequest
 	}
 
 	if uData.ID.Null {
-		currentUser, _, err := d.p.client.Users.GetCurrent(ctx)
+		currentUser, _, err := d.client.Users.GetCurrent(ctx)
 		if err != nil {
 			response.Diagnostics.AddError("Error retrieving user", err.Error())
 			return
@@ -76,7 +87,7 @@ func (d userDataSource) Read(ctx context.Context, request datasource.ReadRequest
 	}
 
 	// workaround to get the name (not username!)
-	user, _, err := d.p.client.Users.Get(ctx, uData.ID.Value)
+	user, _, err := d.client.Users.Get(ctx, uData.ID.Value)
 	if err != nil {
 		response.Diagnostics.AddError("Error retrieving user", err.Error())
 		return

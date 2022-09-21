@@ -5,16 +5,27 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/pavel-snyk/snyk-sdk-go/snyk"
 )
 
-type organizationDataSourceType struct{}
+var _ datasource.DataSource = (*organizationDataSource)(nil)
 
-func (d organizationDataSourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+type organizationDataSource struct {
+	client *snyk.Client
+}
+
+func NewOrganizationDataSource() datasource.DataSource {
+	return &organizationDataSource{}
+}
+
+func (d *organizationDataSource) Metadata(_ context.Context, _ datasource.MetadataRequest, response *datasource.MetadataResponse) {
+	response.TypeName = "snyk_organization"
+}
+
+func (d *organizationDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "The organization data source provides information about an existing Snyk organization.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -37,17 +48,16 @@ func (d organizationDataSourceType) GetSchema(_ context.Context) (tfsdk.Schema, 
 	}, nil
 }
 
-func (d organizationDataSourceType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return organizationDataSource{
-		p: p.(*snykProvider),
-	}, nil
+func (d *organizationDataSource) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
+
+	client := request.ProviderData.(*snyk.Client)
+	d.client = client
 }
 
-type organizationDataSource struct {
-	p *snykProvider
-}
-
-func (d organizationDataSource) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
+func (d *organizationDataSource) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
 	var oData organizationData
 	diags := request.Config.Get(ctx, &oData)
 	response.Diagnostics.Append(diags...)
@@ -55,7 +65,7 @@ func (d organizationDataSource) Read(ctx context.Context, request datasource.Rea
 		return
 	}
 
-	orgs, _, err := d.p.client.Orgs.List(ctx)
+	orgs, _, err := d.client.Orgs.List(ctx)
 	if err != nil {
 		response.Diagnostics.AddError("Error retrieving organizations", err.Error())
 		return

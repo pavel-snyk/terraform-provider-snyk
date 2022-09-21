@@ -42,7 +42,7 @@ func TestAccResourceOrganization_basic(t *testing.T) {
 }
 
 func testAccCheckResourceOrganizationDestroy(state *terraform.State) error {
-	client := testAccProvider.(*snykProvider).client
+	client := testSnykClient()
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "snyk_organization" {
@@ -73,7 +73,7 @@ func testAccCheckResourceOrganizationExists(resourceName string, organization *s
 			return fmt.Errorf("organization ID is not set")
 		}
 
-		client := testAccProvider.(*snykProvider).client
+		client := testSnykClient()
 		orgs, _, err := client.Orgs.List(context.Background())
 		if err != nil {
 			return err

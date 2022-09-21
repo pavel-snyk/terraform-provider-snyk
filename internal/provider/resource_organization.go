@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -14,9 +13,21 @@ import (
 	"github.com/pavel-snyk/terraform-provider-snyk/internal/validators"
 )
 
-type organizationResourceType struct{}
+var _ resource.Resource = (*organizationResource)(nil)
 
-func (r organizationResourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+type organizationResource struct {
+	client *snyk.Client
+}
+
+func NewOrganizationResource() resource.Resource {
+	return &organizationResource{}
+}
+
+func (r *organizationResource) Metadata(_ context.Context, _ resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = "snyk_organization"
+}
+
+func (r *organizationResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "The organization resource allows you to manage Snyk organization.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -43,14 +54,13 @@ func (r organizationResourceType) GetSchema(_ context.Context) (tfsdk.Schema, di
 	}, nil
 }
 
-func (r organizationResourceType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return organizationResource{
-		p: p.(*snykProvider),
-	}, nil
-}
+func (r *organizationResource) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
 
-type organizationResource struct {
-	p *snykProvider
+	client := request.ProviderData.(*snyk.Client)
+	r.client = client
 }
 
 type organizationData struct {
@@ -59,7 +69,7 @@ type organizationData struct {
 	Name    types.String `tfsdk:"name"`
 }
 
-func (r organizationResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+func (r *organizationResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	// get values from plan
 	var plan organizationData
 	if diags := request.Plan.Get(ctx, &plan); diags.HasError() {
@@ -73,7 +83,7 @@ func (r organizationResource) Create(ctx context.Context, request resource.Creat
 		GroupID: plan.GroupID.Value,
 	}
 	tflog.Trace(ctx, "organizationResource.Create", map[string]interface{}{"payload": createRequest})
-	org, _, err := r.p.client.Orgs.Create(ctx, createRequest)
+	org, _, err := r.client.Orgs.Create(ctx, createRequest)
 	if err != nil {
 		response.Diagnostics.AddError("Error creating organization", err.Error())
 		return
@@ -94,7 +104,7 @@ func (r organizationResource) Create(ctx context.Context, request resource.Creat
 	}
 }
 
-func (r organizationResource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (r *organizationResource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var state organizationData
 	diags := request.State.Get(ctx, &state)
 	response.Diagnostics.Append(diags...)
@@ -104,7 +114,7 @@ func (r organizationResource) Read(ctx context.Context, request resource.ReadReq
 
 	organizationID := state.ID.Value
 
-	orgs, _, err := r.p.client.Orgs.List(ctx)
+	orgs, _, err := r.client.Orgs.List(ctx)
 	if err != nil {
 		response.Diagnostics.AddError("Error reading organizations", err.Error())
 		return
@@ -136,10 +146,10 @@ func (r organizationResource) Read(ctx context.Context, request resource.ReadReq
 	}
 }
 
-func (r organizationResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+func (r *organizationResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 }
 
-func (r organizationResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+func (r *organizationResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var state organizationData
 	diags := request.State.Get(ctx, &state)
 	response.Diagnostics.Append(diags...)
@@ -149,7 +159,7 @@ func (r organizationResource) Delete(ctx context.Context, request resource.Delet
 
 	organizationID := state.ID.Value
 
-	_, err := r.p.client.Orgs.Delete(ctx, organizationID)
+	_, err := r.client.Orgs.Delete(ctx, organizationID)
 	if err != nil {
 		response.Diagnostics.AddError("Error deleting organization", err.Error())
 		return
