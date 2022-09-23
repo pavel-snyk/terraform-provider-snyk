@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/pavel-snyk/snyk-sdk-go/snyk"
 
-	"github.com/pavel-snyk/terraform-provider-snyk/internal/validators"
+	"github.com/pavel-snyk/terraform-provider-snyk/internal/validator"
 )
 
 var _ resource.Resource = (*organizationResource)(nil)
@@ -47,7 +47,7 @@ func (r *organizationResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Required:    true,
 				Type:        types.StringType,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NotEmptyString(),
+					validator.NotEmptyString(),
 				},
 			},
 		},

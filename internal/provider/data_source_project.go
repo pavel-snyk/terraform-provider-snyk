@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/pavel-snyk/snyk-sdk-go/snyk"
 
-	"github.com/pavel-snyk/terraform-provider-snyk/internal/validators"
+	"github.com/pavel-snyk/terraform-provider-snyk/internal/validator"
 )
 
 var _ datasource.DataSource = (*projectDataSource)(nil)
@@ -39,7 +39,7 @@ func (d *projectDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 				Description: "The name of the project.",
 				Required:    true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NotEmptyString(),
+					validator.NotEmptyString(),
 				},
 				Type: types.StringType,
 			},
@@ -47,7 +47,7 @@ func (d *projectDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 				Description: "The ID of the organization that the project belongs to.",
 				Required:    true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NotEmptyString(),
+					validator.NotEmptyString(),
 				},
 				Type: types.StringType,
 			},

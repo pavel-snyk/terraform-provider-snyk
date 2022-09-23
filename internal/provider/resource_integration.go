@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -13,7 +14,7 @@ import (
 
 	"github.com/pavel-snyk/snyk-sdk-go/snyk"
 
-	"github.com/pavel-snyk/terraform-provider-snyk/internal/validators"
+	"github.com/pavel-snyk/terraform-provider-snyk/internal/validator"
 )
 
 var _ resource.Resource = (*integrationResource)(nil)
@@ -196,7 +197,8 @@ func (r *integrationResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 				Validators: []tfsdk.AttributeValidator{
-					validators.NotEmptyString(),
+					stringvalidator.OneOf(validator.AllowedIntegrationTypes()...),
+					validator.RequiresConfiguredCredentials(),
 				},
 				Type: types.StringType,
 			},

@@ -24,10 +24,6 @@ func TestAccResourceIntegration_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccResourceIntegrationConfig(organizationName, groupID, ""),
-				ExpectError: regexp.MustCompile("Wrong credentials for given integration type"),
-			},
-			{
 				Config: testAccResourceIntegrationConfig(organizationName, groupID, token),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckResourceIntegrationExists("snyk_integration.test", organizationName, &integration),
@@ -58,6 +54,28 @@ func TestAccResourceIntegration_pullRequestSCA(t *testing.T) {
 					resource.TestCheckResourceAttr("snyk_integration.test", "pull_request_sca.fail_on_any_issue", "true"),
 					resource.TestCheckResourceAttr("snyk_integration.test", "pull_request_sca.fail_only_on_issues_with_fix", "false"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccResourceIntegration_invalidTypes(t *testing.T) {
+	t.Parallel()
+
+	organizationName := fmt.Sprintf("tf-test-acc_%s", acctest.RandString(10))
+	groupID := os.Getenv("SNYK_GROUP_ID")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccResourceIntegrationConfigWithTypes(organizationName, groupID, ""),
+				ExpectError: regexp.MustCompile("Value must be one of"),
+			},
+			{
+				Config:      testAccResourceIntegrationConfigWithTypes(organizationName, groupID, "non-existing-type"),
+				ExpectError: regexp.MustCompile("Value must be one of"),
 			},
 		},
 	})
@@ -145,4 +163,19 @@ resource "snyk_integration" "test" {
   }
 }
 `, organizationName, groupID, token)
+}
+
+func testAccResourceIntegrationConfigWithTypes(organizationName, groupID, integrationType string) string {
+	return fmt.Sprintf(`
+ resource "snyk_organization" "test" {
+   name = "%s"
+   group_id = "%s"
+ }
+ resource "snyk_integration" "test" {
+   organization_id = snyk_organization.test.id
+   type  = "%s"
+   url   = "https://testing.gitlab.local"
+   token = "secure-token"
+ }
+ `, organizationName, groupID, integrationType)
 }
