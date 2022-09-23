@@ -24,10 +24,6 @@ func TestAccResourceIntegration_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccResourceIntegrationConfig(organizationName, groupID, ""),
-				ExpectError: regexp.MustCompile("Wrong credentials for given integration type"),
-			},
-			{
 				Config: testAccResourceIntegrationConfig(organizationName, groupID, token),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckResourceIntegrationExists("snyk_integration.test", organizationName, &integration),

@@ -13,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/pavel-snyk/snyk-sdk-go/snyk"
+
+	"github.com/pavel-snyk/terraform-provider-snyk/internal/validator"
 )
 
 var _ resource.Resource = (*integrationResource)(nil)
@@ -195,27 +197,8 @@ func (r *integrationResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 				Validators: []tfsdk.AttributeValidator{
-					stringvalidator.OneOf([]string{
-						snyk.ACRIntegrationType,
-						snyk.ArtifactoryCRIntegrationType,
-						snyk.AzureReposIntegrationType,
-						snyk.BitBucketCloudIntegrationType,
-						snyk.BitBucketConnectAppIntegrationType,
-						snyk.BitBucketServerIntegrationType,
-						snyk.DigitalOceanCRIntegrationType,
-						snyk.DockerHubIntegrationType,
-						snyk.ECRIntegrationType,
-						snyk.GCRIntegrationType,
-						snyk.GitHubIntegrationType,
-						snyk.GitHubCRIntegrationType,
-						snyk.GitHubEnterpriseIntegrationType,
-						snyk.GitLabIntegrationType,
-						snyk.GitLabCRIntegrationType,
-						snyk.GoogleArtifactCRIntegrationType,
-						snyk.HarborCRIntegrationType,
-						snyk.NexusCRIntegrationType,
-						snyk.QuayCRIntegrationType,
-					}...),
+					stringvalidator.OneOf(validator.AllowedIntegrationTypes()...),
+					validator.RequiresConfiguredCredentials(),
 				},
 				Type: types.StringType,
 			},
