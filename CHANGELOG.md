@@ -1,4 +1,18 @@
 
+<a name="v0.7.0"></a>
+## v0.7.0 (2022-09-24)
+### Bug Fixes
+* **resource/snyk_integration**: use oneOf validator for integration type
+### Features
+* **resource/snyk_integration**: add credentials validator for type attribute
+* **resource/snyk_integration**: add configuration options for dependency auto-upgrade
+### Maintaining
+* upgrade snyk-sdk-go to v0.4.1
+* complete migration to terraform-plugin-framework v0.13.0
+* don't run acceptance tests in parallel
+* update snyk-sdk-go to v0.4.0
+* **deps**: bump github.com/hashicorp/terraform-plugin-framework
+
 <a name="v0.6.1"></a>
 ## v0.6.1 (2022-09-19)
 ### Code Refactoring
