@@ -3,7 +3,7 @@ module github.com/pavel-snyk/terraform-provider-snyk
 go 1.18
 
 require (
-	github.com/hashicorp/terraform-plugin-framework v0.13.0
+	github.com/hashicorp/terraform-plugin-framework v0.15.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.5.0
 	github.com/hashicorp/terraform-plugin-go v0.14.0
 	github.com/hashicorp/terraform-plugin-log v0.7.0
