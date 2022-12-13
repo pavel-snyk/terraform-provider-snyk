@@ -39,7 +39,7 @@ jobs:
           git-chglog --config .github/changelog/config.yaml --output .release/DRAFT.md $(git describe --tags $(git rev-list --tags --max-count=1))
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v4
         with:
           args: release --config .github/goreleaser.yaml --rm-dist --release-notes=.release/DRAFT.md
         env:
