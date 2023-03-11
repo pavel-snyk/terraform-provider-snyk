@@ -1,4 +1,17 @@
 
+<a name="v0.7.1"></a>
+## v0.7.1 (2023-03-11)
+### Maintaining
+* bump GitHub action versions to latest
+* don't use deprecated GoReleaser options
+* use go 1.19 in GitHub action builds
+* **deps**: upgrade terraform-plugin-docs to v0.14.1
+* **deps**: upgrade git-chglog to v0.15.4
+* **deps**: upgrade golangci-lint to v1.51.2
+* **deps**: bump github.com/hashicorp/terraform-plugin-sdk/v2
+* **deps**: bump github.com/stretchr/testify from 1.8.0 to 1.8.2
+* **deps**: bump goreleaser/goreleaser-action from 3 to 4
+
 <a name="v0.7.0"></a>
 ## v0.7.0 (2022-09-24)
 ### Bug Fixes
