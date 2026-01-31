@@ -17,6 +17,7 @@ output/
 #################################
 # Golang files (with tooling)   #
 #################################
+/tools/bin/
 .bin/
 *.exe
 *.exe~
