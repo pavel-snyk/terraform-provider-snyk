@@ -16,24 +16,49 @@ Use the navigation to the left to read about the available resources.
 
 ## Example Usage
 
-Terraform 1.0.7 and later:
+### Using default region
 
 ```terraform
-terraform {
-  required_providers {
-    snyk = {
-      source  = "pavel-snyk/snyk"
-      version = "~> 0.6"
-    }
-  }
-}
-
 # Set the variable value in *.tfvars file
 # or using -var="snyk_token=..." CLI option
 variable "snyk_token" {}
 
-# Configure the Snyk Provider
+# Configure the Snyk Provider with default SNYK-US-01 region.
 provider "snyk" {
+  token = var.snyk_token
+}
+```
+
+### Using predefined region
+
+```terraform
+# Set the variable value in *.tfvars file
+# or using -var="snyk_token=..." CLI option
+variable "snyk_token" {}
+
+# Configure the Snyk Provider with predefined SNYK-EU-01 region.
+provider "snyk" {
+  region = {
+    name = "SNYK-EU-01"
+  }
+  token = var.snyk_token
+}
+```
+
+### Using custom region
+
+```terraform
+# Set the variable value in *.tfvars file
+# or using -var="snyk_token=..." CLI option
+variable "snyk_token" {}
+
+# Configure the Snyk Provider with custom region.
+provider "snyk" {
+  region = {
+    name          = "my-instance"
+    app_base_url  = "https://app.my-instance.local/"
+    rest_base_url = "https://api.my-instance.local/rest/"
+  }
   token = var.snyk_token
 }
 ```
@@ -43,5 +68,16 @@ provider "snyk" {
 
 ### Optional
 
-- `endpoint` (String) This can be used to override the base URL for Snyk API requests. It can be also sourced from the `SNYK_ENDPOINT` environment variable.
-- `token` (String, Sensitive) This is the API token from Snyk. It must be provided, but it can also be sourced from the `SNYK_TOKEN` environment variable.
+- `region` (Attributes) Configuration for the Snyk Region. If not provided, the provider will use the `SNYK_REGION` environment variable, or default to  **SNYK-US-01**.
+    - to use a **predefined Snyk region** (e.g., `SNYK-EU-01`, `SNYK-AU-01`), provide only the `name` attribute. See the official Snyk documentation for a list of [available region names](https://docs.snyk.io/snyk-data-and-governance/regional-hosting-and-data-residency#available-snyk-regions).
+    - to use a **custom or private Snyk region**, provide all three attributes: `name`, `app_base_url` and `rest_base_url`. (see [below for nested schema](#nestedatt--region))
+- `token` (String, Sensitive) This Snyk API token. It can also be sourced from the `SNYK_TOKEN` environment variable.
+
+<a id="nestedatt--region"></a>
+### Nested Schema for `region`
+
+Optional:
+
+- `app_base_url` (String) The application base URL for a custom region. Must be provided along with `name` and `rest_base_url` when defining a custom region.
+- `name` (String) The name of Snyk region. For predefined regions, this is the short name (e.g. `SNYK-EU-01`). For customer regions, this is a user-defined identifier.
+- `rest_base_url` (String) The REST API base URL for a custom region. Must be provided along with `name` and `app_base_url` when defining a custom region.
