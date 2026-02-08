@@ -16,8 +16,16 @@ Use the navigation to the left to read about the available resources.
 
 ## Example Usage
 
-Terraform 1.0.7 and later:
+### Using default region
 
-{{ tffile "examples/provider/provider.tf" }}
+{{ tffile "examples/provider/provider_with_default_region.tf" }}
+
+### Using predefined region
+
+{{ tffile "examples/provider/provider_with_predefined_region.tf" }}
+
+### Using custom region
+
+{{ tffile "examples/provider/provider_with_custom_region.tf" }}
 
 {{ .SchemaMarkdown | trimspace }}
