@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/pavel-snyk/snyk-sdk-go/v2/snyk"
 )
 
@@ -19,7 +18,10 @@ const (
 	defaultSnykRegion = "SNYK-US-01"
 )
 
-var _ provider.Provider = &snykProvider{}
+var (
+	_ provider.Provider                   = &snykProvider{}
+	_ provider.ProviderWithValidateConfig = &snykProvider{}
+)
 
 // snykProvider defines the provider implementation.
 type snykProvider struct {
@@ -88,6 +90,48 @@ type snykProviderRegionModel struct {
 	RESTBaseURL types.String `tfsdk:"rest_base_url"`
 }
 
+func (p *snykProvider) ValidateConfig(ctx context.Context, request provider.ValidateConfigRequest, response *provider.ValidateConfigResponse) {
+	var config snykProviderModel
+
+	response.Diagnostics.Append(request.Config.Get(ctx, &config)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// validate region block
+	if !config.Region.IsNull() && !config.Region.IsUnknown() {
+		var regionConfig snykProviderRegionModel
+		diags := request.Config.GetAttribute(ctx, path.Root("region"), &regionConfig)
+		response.Diagnostics.Append(diags...)
+		if response.Diagnostics.HasError() {
+			return
+		}
+
+		hasAppBaseURL := !regionConfig.AppBaseURL.IsNull()
+		hasRESTBaseURL := !regionConfig.RESTBaseURL.IsNull()
+
+		// for custom region all parts must be present
+		if hasAppBaseURL || hasRESTBaseURL {
+			if regionConfig.Name.IsNull() || !hasAppBaseURL || !hasRESTBaseURL {
+				response.Diagnostics.AddAttributeError(
+					path.Root("region"),
+					"Invalid provider config",
+					`For a custom region, the "name", "app_base_url" and "rest_base_url" attributes must all be set.`,
+				)
+			}
+		}
+	}
+
+	// validate token
+	if config.Token.IsNull() && os.Getenv("SNYK_TOKEN") == "" {
+		response.Diagnostics.AddAttributeError(
+			path.Root("token"),
+			"Invalid provider config",
+			`The Snyk API token must be provided via the "token" attribute or the "SNYK_TOKEN" environment variable.`,
+		)
+	}
+}
+
 func (p *snykProvider) Configure(ctx context.Context, request provider.ConfigureRequest, response *provider.ConfigureResponse) {
 	var config snykProviderModel
 
@@ -97,6 +141,8 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 	}
 
 	opts := []snyk.ClientOption{snyk.WithUserAgent(p.userAgent())}
+
+	// region logic
 	if config.Region.IsNull() || config.Region.IsUnknown() {
 		// no region block, fallback to env var, then default
 		regionName := os.Getenv("SNYK_REGION")
@@ -105,7 +151,6 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 		}
 		opts = append(opts, snyk.WithRegionAlias(regionName))
 	} else {
-		// region block is defined
 		var regionConfig snykProviderRegionModel
 		diags := request.Config.GetAttribute(ctx, path.Root("region"), &regionConfig)
 		response.Diagnostics.Append(diags...)
@@ -113,27 +158,16 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 			return
 		}
 
-		hasName := !regionConfig.Name.IsNull()
-		hasAppBaseURL := !regionConfig.AppBaseURL.IsNull()
-		hasRESTBaseURL := !regionConfig.RESTBaseURL.IsNull()
-
-		if hasAppBaseURL || hasRESTBaseURL {
-			// custom region
-			if hasName && hasAppBaseURL && hasRESTBaseURL {
-				opts = append(opts, snyk.WithRegion(snyk.Region{
-					Alias:       regionConfig.Name.ValueString(),
-					AppBaseURL:  regionConfig.AppBaseURL.ValueString(),
-					RESTBaseURL: regionConfig.RESTBaseURL.ValueString(),
-				}))
-			} else {
-				response.Diagnostics.AddAttributeError(
-					path.Root("region"),
-					"Invalid provider config",
-					`Attributes "name", "app_base_url" and "rest_base_url" must be all set together.`)
-			}
+		if !regionConfig.AppBaseURL.IsNull() {
+			// all three attributes are present because ValidateConfig passed
+			opts = append(opts, snyk.WithRegion(snyk.Region{
+				Alias:       regionConfig.Name.ValueString(),
+				AppBaseURL:  regionConfig.AppBaseURL.ValueString(),
+				RESTBaseURL: regionConfig.RESTBaseURL.ValueString(),
+			}))
 		} else {
-			// predefined region (or empty block)
-			if hasName {
+			if !regionConfig.Name.IsNull() {
+				// predefined region
 				opts = append(opts, snyk.WithRegionAlias(regionConfig.Name.ValueString()))
 			} else {
 				// fallback to default by empty region block
@@ -142,19 +176,10 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 		}
 	}
 
-	token := os.Getenv("SNYK_TOKEN")
-	if !config.Token.IsNull() {
-		token = config.Token.ValueString()
-	}
-
-	// required if still unset
+	// token logic
+	token := config.Token.ValueString()
 	if token == "" {
-		response.Diagnostics.AddAttributeError(
-			path.Root("token"),
-			"Invalid provider config",
-			`Attribute "token" must be set.`,
-		)
-		return
+		token = os.Getenv("SNYK_TOKEN")
 	}
 
 	client, err := snyk.NewClient(token, opts...)
@@ -167,9 +192,6 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 		)
 		return
 	}
-	tflog.Info(ctx, "Snyk SDK client configured", map[string]any{
-		"terraform_version": request.TerraformVersion,
-	})
 
 	response.DataSourceData = client
 	response.ResourceData = client
