@@ -73,8 +73,8 @@ github.com/mitchellh/go-testing-interface v1.14.1 h1:jrgshOhYAUVNMAJiKbEu7EqAwgJ
 github.com/mitchellh/go-testing-interface v1.14.1/go.mod h1:gfgS7OtZj6MA4U1UrDRp04twqAjfvlZyCfX3sDjEym8=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
 github.com/oklog/run v1.1.0/go.mod h1:sVPdnTZT1zYwAJeCMu2Th4T21pA3FPOQRfWjQlk7DVU=
-github.com/pavel-snyk/snyk-sdk-go/v2 v2.0.0-20260210002118-f0ad8b7de2cf h1:0b7vMmCw4iBMBqF3q2TtHELwH5cefEtkIXBAzsN82tE=
-github.com/pavel-snyk/snyk-sdk-go/v2 v2.0.0-20260210002118-f0ad8b7de2cf/go.mod h1:7E28mxL/T/EA3hMo9Fa0FjYuLDq0uUKJFB05oaaPoog=
+github.com/pavel-snyk/snyk-sdk-go/v2 v2.0.0-20260211181057-d3133137dff8 h1:1IIR7PHXT8DOxaG3QlaBtSWPM/RZEImELju2OVULQGk=
+github.com/pavel-snyk/snyk-sdk-go/v2 v2.0.0-20260211181057-d3133137dff8/go.mod h1:7E28mxL/T/EA3hMo9Fa0FjYuLDq0uUKJFB05oaaPoog=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=

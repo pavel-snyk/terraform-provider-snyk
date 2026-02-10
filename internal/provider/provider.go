@@ -215,7 +215,7 @@ func (p *snykProvider) DataSources(_ context.Context) []func() datasource.DataSo
 func (p *snykProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		//NewIntegrationResource,
-		//NewOrganizationResource,
+		NewOrganizationResource,
 	}
 }
 
