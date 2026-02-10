@@ -5,7 +5,7 @@ go 1.25
 require (
 	github.com/hashicorp/terraform-plugin-framework v1.17.0
 	github.com/hashicorp/terraform-plugin-log v0.10.0
-	github.com/pavel-snyk/snyk-sdk-go/v2 v2.0.0-20260207182349-b10caefa0501
+	github.com/pavel-snyk/snyk-sdk-go/v2 v2.0.0-20260210002118-f0ad8b7de2cf
 )
 
 require (

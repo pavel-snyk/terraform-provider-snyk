@@ -8,6 +8,7 @@ provider "snyk" {
     name          = "my-instance"
     app_base_url  = "https://app.my-instance.local/"
     rest_base_url = "https://api.my-instance.local/rest/"
+    v1_base_url   = "https://api.my-instance.local/v1/"
   }
   token = var.snyk_token
 }

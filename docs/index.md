@@ -58,6 +58,7 @@ provider "snyk" {
     name          = "my-instance"
     app_base_url  = "https://app.my-instance.local/"
     rest_base_url = "https://api.my-instance.local/rest/"
+    v1_base_url   = "https://api.my-instance.local/v1/"
   }
   token = var.snyk_token
 }
@@ -70,7 +71,7 @@ provider "snyk" {
 
 - `region` (Attributes) Configuration for the Snyk Region. If not provided, the provider will use the `SNYK_REGION` environment variable, or default to  **SNYK-US-01**.
     - to use a **predefined Snyk region** (e.g., `SNYK-EU-01`, `SNYK-AU-01`), provide only the `name` attribute. See the official Snyk documentation for a list of [available region names](https://docs.snyk.io/snyk-data-and-governance/regional-hosting-and-data-residency#available-snyk-regions).
-    - to use a **custom or private Snyk region**, provide all three attributes: `name`, `app_base_url` and `rest_base_url`. (see [below for nested schema](#nestedatt--region))
+    - to use a **custom or private Snyk region**, provide all attributes: `name`, `app_base_url`, `rest_base_url` and `v1_base_url`. (see [below for nested schema](#nestedatt--region))
 - `token` (String, Sensitive) This Snyk API token. It can also be sourced from the `SNYK_TOKEN` environment variable.
 
 <a id="nestedatt--region"></a>
@@ -78,6 +79,7 @@ provider "snyk" {
 
 Optional:
 
-- `app_base_url` (String) The application base URL for a custom region. Must be provided along with `name` and `rest_base_url` when defining a custom region.
+- `app_base_url` (String) The application base URL for a custom region. Must be provided along with `name`, `rest_base_url` and `v1_base_url` when defining a custom region.
 - `name` (String) The name of Snyk region. For predefined regions, this is the short name (e.g. `SNYK-EU-01`). For customer regions, this is a user-defined identifier.
-- `rest_base_url` (String) The REST API base URL for a custom region. Must be provided along with `name` and `app_base_url` when defining a custom region.
+- `rest_base_url` (String) The REST API base URL for a custom region. Must be provided along with `name`, `app_base_url` and `v1_base_url` when defining a custom region.
+- `v1_base_url` (String) The V1 API base URL for a custom region. Must be provided along with `name`, `app_base_url` and `rest_base_url` when defining a custom region.

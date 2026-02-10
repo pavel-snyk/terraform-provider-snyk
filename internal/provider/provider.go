@@ -53,18 +53,22 @@ func (p *snykProvider) Schema(_ context.Context, _ provider.SchemaRequest, respo
 					"use the `SNYK_REGION` environment variable, or default to  **%s**.\n"+
 					"    - to use a **predefined Snyk region** (e.g., `SNYK-EU-01`, `SNYK-AU-01`), provide only the `name` attribute. "+
 					"See the official Snyk documentation for a list of [available region names](https://docs.snyk.io/snyk-data-and-governance/regional-hosting-and-data-residency#available-snyk-regions).\n"+
-					"    - to use a **custom or private Snyk region**, provide all three attributes: `name`, `app_base_url` and `rest_base_url`.", defaultSnykRegion),
+					"    - to use a **custom or private Snyk region**, provide all attributes: `name`, `app_base_url`, `rest_base_url` and `v1_base_url`.", defaultSnykRegion),
 				Attributes: map[string]schema.Attribute{
 					"name": schema.StringAttribute{
 						MarkdownDescription: "The name of Snyk region. For predefined regions, this is the short name (e.g. `SNYK-EU-01`). For customer regions, this is a user-defined identifier.",
 						Optional:            true,
 					},
 					"app_base_url": schema.StringAttribute{
-						MarkdownDescription: "The application base URL for a custom region. Must be provided along with `name` and `rest_base_url` when defining a custom region.",
+						MarkdownDescription: "The application base URL for a custom region. Must be provided along with `name`, `rest_base_url` and `v1_base_url` when defining a custom region.",
 						Optional:            true,
 					},
 					"rest_base_url": schema.StringAttribute{
-						MarkdownDescription: "The REST API base URL for a custom region. Must be provided along with `name` and `app_base_url` when defining a custom region.",
+						MarkdownDescription: "The REST API base URL for a custom region. Must be provided along with `name`, `app_base_url` and `v1_base_url` when defining a custom region.",
+						Optional:            true,
+					},
+					"v1_base_url": schema.StringAttribute{
+						MarkdownDescription: "The V1 API base URL for a custom region. Must be provided along with `name`, `app_base_url` and `rest_base_url` when defining a custom region.",
 						Optional:            true,
 					},
 				},
@@ -88,6 +92,7 @@ type snykProviderRegionModel struct {
 	AppBaseURL  types.String `tfsdk:"app_base_url"`
 	Name        types.String `tfsdk:"name"`
 	RESTBaseURL types.String `tfsdk:"rest_base_url"`
+	V1BaseURL   types.String `tfsdk:"v1_base_url"`
 }
 
 func (p *snykProvider) ValidateConfig(ctx context.Context, request provider.ValidateConfigRequest, response *provider.ValidateConfigResponse) {
@@ -109,14 +114,15 @@ func (p *snykProvider) ValidateConfig(ctx context.Context, request provider.Vali
 
 		hasAppBaseURL := !regionConfig.AppBaseURL.IsNull()
 		hasRESTBaseURL := !regionConfig.RESTBaseURL.IsNull()
+		hasV1BaseURL := !regionConfig.V1BaseURL.IsNull()
 
 		// for custom region all parts must be present
-		if hasAppBaseURL || hasRESTBaseURL {
-			if regionConfig.Name.IsNull() || !hasAppBaseURL || !hasRESTBaseURL {
+		if hasAppBaseURL || hasRESTBaseURL || hasV1BaseURL {
+			if regionConfig.Name.IsNull() || !hasAppBaseURL || !hasRESTBaseURL || !hasV1BaseURL {
 				response.Diagnostics.AddAttributeError(
 					path.Root("region"),
 					"Invalid provider config",
-					`For a custom region, the "name", "app_base_url" and "rest_base_url" attributes must all be set.`,
+					`For a custom region, the "name", "app_base_url", "rest_base_url" and "v1_base_url" attributes must all be set.`,
 				)
 			}
 		}
@@ -159,11 +165,12 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 		}
 
 		if !regionConfig.AppBaseURL.IsNull() {
-			// all three attributes are present because ValidateConfig passed
+			// all attributes are present because ValidateConfig passed
 			opts = append(opts, snyk.WithRegion(snyk.Region{
 				Alias:       regionConfig.Name.ValueString(),
 				AppBaseURL:  regionConfig.AppBaseURL.ValueString(),
 				RESTBaseURL: regionConfig.RESTBaseURL.ValueString(),
+				V1BaseURL:   regionConfig.V1BaseURL.ValueString(),
 			}))
 		} else {
 			if !regionConfig.Name.IsNull() {
