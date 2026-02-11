@@ -71,7 +71,7 @@ provider "snyk" {
 
 - `region` (Attributes) Configuration for the Snyk Region. If not provided, the provider will use the `SNYK_REGION` environment variable, or default to  **SNYK-US-01**.
     - to use a **predefined Snyk region** (e.g., `SNYK-EU-01`, `SNYK-AU-01`), provide only the `name` attribute. See the official Snyk documentation for a list of [available region names](https://docs.snyk.io/snyk-data-and-governance/regional-hosting-and-data-residency#available-snyk-regions).
-    - to use a **custom or private Snyk region**, provide all attributes: `name`, `app_base_url`, `rest_base_url` and `v1_base_url`. (see [below for nested schema](#nestedatt--region))
+    - to use a **custom or private Snyk region**, provide all attributes: `name`, `app_base_url`, `rest_base_url` and `v1_base_url`. The URL attributes can also be source from the `SNYK_APP_BASE_URL`, `SNYK_REST_BASE_URL` and `SNYK_V1_BASE_URL` environment variables, respectively. (see [below for nested schema](#nestedatt--region))
 - `token` (String, Sensitive) This Snyk API token. It can also be sourced from the `SNYK_TOKEN` environment variable.
 
 <a id="nestedatt--region"></a>
