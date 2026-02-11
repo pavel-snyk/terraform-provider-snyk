@@ -53,7 +53,8 @@ func (p *snykProvider) Schema(_ context.Context, _ provider.SchemaRequest, respo
 					"use the `SNYK_REGION` environment variable, or default to  **%s**.\n"+
 					"    - to use a **predefined Snyk region** (e.g., `SNYK-EU-01`, `SNYK-AU-01`), provide only the `name` attribute. "+
 					"See the official Snyk documentation for a list of [available region names](https://docs.snyk.io/snyk-data-and-governance/regional-hosting-and-data-residency#available-snyk-regions).\n"+
-					"    - to use a **custom or private Snyk region**, provide all attributes: `name`, `app_base_url`, `rest_base_url` and `v1_base_url`.", defaultSnykRegion),
+					"    - to use a **custom or private Snyk region**, provide all attributes: `name`, `app_base_url`, `rest_base_url` and `v1_base_url`. "+
+					"The URL attributes can also be source from the `SNYK_APP_BASE_URL`, `SNYK_REST_BASE_URL` and `SNYK_V1_BASE_URL` environment variables, respectively.", defaultSnykRegion),
 				Attributes: map[string]schema.Attribute{
 					"name": schema.StringAttribute{
 						MarkdownDescription: "The name of Snyk region. For predefined regions, this is the short name (e.g. `SNYK-EU-01`). For customer regions, this is a user-defined identifier.",
@@ -112,9 +113,9 @@ func (p *snykProvider) ValidateConfig(ctx context.Context, request provider.Vali
 			return
 		}
 
-		hasAppBaseURL := !regionConfig.AppBaseURL.IsNull()
-		hasRESTBaseURL := !regionConfig.RESTBaseURL.IsNull()
-		hasV1BaseURL := !regionConfig.V1BaseURL.IsNull()
+		hasAppBaseURL := resolveHCLValueOrEnv(regionConfig.AppBaseURL, "SNYK_APP_BASE_URL") != ""
+		hasRESTBaseURL := resolveHCLValueOrEnv(regionConfig.RESTBaseURL, "SNYK_REST_BASE_URL") != ""
+		hasV1BaseURL := resolveHCLValueOrEnv(regionConfig.V1BaseURL, "SNYK_V1_BASE_URL") != ""
 
 		// for custom region all parts must be present
 		if hasAppBaseURL || hasRESTBaseURL || hasV1BaseURL {
@@ -166,11 +167,14 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 
 		if !regionConfig.AppBaseURL.IsNull() {
 			// all attributes are present because ValidateConfig passed
+			appBaseURL := resolveHCLValueOrEnv(regionConfig.AppBaseURL, "SNYK_APP_BASE_URL")
+			restBaseURL := resolveHCLValueOrEnv(regionConfig.RESTBaseURL, "SNYK_REST_BASE_URL")
+			v1BaseURL := resolveHCLValueOrEnv(regionConfig.V1BaseURL, "SNYK_V1_BASE_URL")
 			opts = append(opts, snyk.WithRegion(snyk.Region{
 				Alias:       regionConfig.Name.ValueString(),
-				AppBaseURL:  regionConfig.AppBaseURL.ValueString(),
-				RESTBaseURL: regionConfig.RESTBaseURL.ValueString(),
-				V1BaseURL:   regionConfig.V1BaseURL.ValueString(),
+				AppBaseURL:  appBaseURL,
+				RESTBaseURL: restBaseURL,
+				V1BaseURL:   v1BaseURL,
 			}))
 		} else {
 			if !regionConfig.Name.IsNull() {
@@ -223,4 +227,13 @@ func (p *snykProvider) userAgent() string {
 	name := "terraform-provider-snyk"
 	comment := "https://registry.terraform.io/providers/pavel-snyk/snyk"
 	return fmt.Sprintf("%s/%s (+%s)", name, p.version, comment)
+}
+
+// resolveHCLValueOrEnv return the value from the HCL if present, otherwise falls back to an environment variable.
+// HCL value (even empty string) takes precedence over the environment variable.
+func resolveHCLValueOrEnv(hclValue types.String, envVarName string) string {
+	if !hclValue.IsNull() {
+		return hclValue.ValueString()
+	}
+	return os.Getenv(envVarName)
 }
