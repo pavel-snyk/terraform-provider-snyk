@@ -1,100 +1,139 @@
 package provider
 
-//import (
-//	"context"
-//	"fmt"
-//	"os"
-//	"regexp"
-//	"testing"
-//
-//	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-//	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-//	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-//
-//	"github.com/pavel-snyk/snyk-sdk-go/snyk"
-//)
-//
-//func TestAccResourceOrganization_basic(t *testing.T) {
-//	var organization snyk.Organization
-//	organizationName := fmt.Sprintf("tf-test-acc_%s", acctest.RandString(10))
-//	groupID := os.Getenv("SNYK_GROUP_ID")
-//
-//	resource.Test(t, resource.TestCase{
-//		PreCheck:                 func() { testAccPreCheck(t) },
-//		ProtoV6ProviderFactories: testAccProviderFactories,
-//		CheckDestroy:             testAccCheckResourceOrganizationDestroy,
-//		Steps: []resource.TestStep{
-//			{
-//				Config:      testAccResourceOrganizationConfig("", groupID),
-//				ExpectError: regexp.MustCompile("string must not be empty"),
-//			},
-//			{
-//				Config: testAccResourceOrganizationConfig(organizationName, groupID),
-//				Check: resource.ComposeAggregateTestCheckFunc(
-//					testAccCheckResourceOrganizationExists("snyk_organization.test", &organization),
-//					resource.TestCheckResourceAttr("snyk_organization.test", "name", organizationName),
-//					resource.TestCheckResourceAttr("snyk_organization.test", "group_id", groupID),
-//					resource.TestCheckResourceAttrSet("snyk_organization.test", "id"),
-//				),
-//			},
-//		},
-//	})
-//}
-//
-//func testAccCheckResourceOrganizationDestroy(state *terraform.State) error {
-//	client := testSnykClient()
-//
-//	for _, rs := range state.RootModule().Resources {
-//		if rs.Type != "snyk_organization" {
-//			continue
-//		}
-//
-//		orgs, _, err := client.Orgs.List(context.Background())
-//		if err != nil {
-//			return err
-//		}
-//
-//		for _, org := range orgs {
-//			if org.ID == rs.Primary.ID {
-//				return fmt.Errorf("organization (%s) still exists", rs.Primary.ID)
-//			}
-//		}
-//	}
-//
-//	return nil
-//}
-//
-//func testAccCheckResourceOrganizationExists(resourceName string, organization *snyk.Organization) resource.TestCheckFunc {
-//	return func(state *terraform.State) error {
-//		// retrieve resource from state
-//		rs := state.RootModule().Resources[resourceName]
-//
-//		if rs.Primary.ID == "" {
-//			return fmt.Errorf("organization ID is not set")
-//		}
-//
-//		client := testSnykClient()
-//		orgs, _, err := client.Orgs.List(context.Background())
-//		if err != nil {
-//			return err
-//		}
-//
-//		for _, org := range orgs {
-//			if org.ID == rs.Primary.ID {
-//				organization = &org
-//				return nil
-//			}
-//		}
-//
-//		return fmt.Errorf("organization (%s) not found", rs.Primary.ID)
-//	}
-//}
-//
-//func testAccResourceOrganizationConfig(organizationName, groupID string) string {
-//	return fmt.Sprintf(`
-//resource "snyk_organization" "test" {
-//  name     = "%s"
-//  group_id = "%s"
-//}
-//`, organizationName, groupID)
-//}
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"strings"
+	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
+)
+
+func init() {
+	resource.AddTestSweepers("snyk_organization", &resource.Sweeper{
+		Name: "snyk_organization",
+		F: func(region string) error {
+			ctx := context.Background()
+			client, err := sharedClient(region)
+			if err != nil {
+				return fmt.Errorf("could not create shared Snyk SDK client: %w", err)
+			}
+
+			orgs, errf := client.Orgs.AllAccessibleOrgs(ctx, nil)
+			for org := range orgs {
+				if strings.HasPrefix(org.Attributes.Name, accTestPrefix) {
+					slog.Info("Deleting snyk_organization", "name", org.Attributes.Name, "id", org.ID)
+					resp, err := client.OrgsV1.Delete(ctx, org.ID)
+					if err != nil {
+						slog.Warn(
+							"Error deleting organization during sweep",
+							"name", org.Attributes.Name,
+							"error", err,
+							"snyk_request_id", resp.SnykRequestID,
+						)
+					}
+				}
+			}
+			if err := errf(); err != nil {
+				return fmt.Errorf("unable to iterate over all accessible orgs: %w", err)
+			}
+
+			return nil
+		},
+	})
+}
+
+func TestAccSnykOrganizationResource(t *testing.T) {
+	name := acctest.RandomWithPrefix(accTestPrefix)
+	nameUpdated := acctest.RandomWithPrefix(accTestPrefix)
+	groupID := accTestGroupID()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create and Read testing
+			{
+				Config: testAccSnykOrganizationResourceConfig(name, groupID),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectKnownValue(
+						"snyk_organization.test",
+						tfjsonpath.New("group_id"),
+						knownvalue.StringExact(groupID),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_organization.test",
+						tfjsonpath.New("id"),
+						knownvalue.NotNull(),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_organization.test",
+						tfjsonpath.New("name"),
+						knownvalue.StringExact(name),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_organization.test",
+						tfjsonpath.New("slug"),
+						knownvalue.NotNull(),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_organization.test",
+						tfjsonpath.New("tenant_id"),
+						knownvalue.NotNull(),
+					),
+				},
+			},
+			// ImportState testing
+			{
+				ResourceName:      "snyk_organization.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update and Read testing
+			{
+				Config: testAccSnykOrganizationResourceConfig(nameUpdated, groupID),
+				ConfigStateChecks: []statecheck.StateCheck{
+					statecheck.ExpectKnownValue(
+						"snyk_organization.test",
+						tfjsonpath.New("group_id"),
+						knownvalue.StringExact(groupID),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_organization.test",
+						tfjsonpath.New("id"),
+						knownvalue.NotNull(),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_organization.test",
+						tfjsonpath.New("name"),
+						knownvalue.StringExact(nameUpdated),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_organization.test",
+						tfjsonpath.New("slug"),
+						knownvalue.NotNull(),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_organization.test",
+						tfjsonpath.New("tenant_id"),
+						knownvalue.NotNull(),
+					),
+				},
+			},
+		},
+	})
+}
+
+func testAccSnykOrganizationResourceConfig(name, groupID string) string {
+	return fmt.Sprintf(`
+resource "snyk_organization" "test" {
+  name     = %[1]q
+  group_id = %[2]q
+}
+`, name, groupID)
+}
