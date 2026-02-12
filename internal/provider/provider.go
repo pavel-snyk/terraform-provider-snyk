@@ -6,11 +6,14 @@ import (
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/pavel-snyk/snyk-sdk-go/v2/snyk"
 )
 
@@ -104,33 +107,33 @@ func (p *snykProvider) ValidateConfig(ctx context.Context, request provider.Vali
 		return
 	}
 
-	// validate region block
-	if !config.Region.IsNull() && !config.Region.IsUnknown() {
-		var regionConfig snykProviderRegionModel
-		diags := request.Config.GetAttribute(ctx, path.Root("region"), &regionConfig)
-		response.Diagnostics.Append(diags...)
-		if response.Diagnostics.HasError() {
-			return
+	// validate region:
+	regionConfig, diags := p.resolveRegionConfig(ctx, config, request.Config)
+	response.Diagnostics.Append(diags...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	// custom region is intended if any of the URLs are set.
+	customRegionDefined := regionConfig.appBaseURL != "" || regionConfig.restBaseURL != "" || regionConfig.v1BaseURL != ""
+	if customRegionDefined {
+		if regionConfig.name == "" {
+			response.Diagnostics.AddAttributeError(
+				path.Root("region"),
+				"Incomplete Custom Region Configuration",
+				`When using custom region URLs, the "name" attribute must be set (either in HCL or via "SNYK_REGION" environment variable).`,
+			)
 		}
-
-		hasAppBaseURL := resolveHCLValueOrEnv(regionConfig.AppBaseURL, "SNYK_APP_BASE_URL") != ""
-		hasRESTBaseURL := resolveHCLValueOrEnv(regionConfig.RESTBaseURL, "SNYK_REST_BASE_URL") != ""
-		hasV1BaseURL := resolveHCLValueOrEnv(regionConfig.V1BaseURL, "SNYK_V1_BASE_URL") != ""
-
-		// for custom region all parts must be present
-		if hasAppBaseURL || hasRESTBaseURL || hasV1BaseURL {
-			if regionConfig.Name.IsNull() || !hasAppBaseURL || !hasRESTBaseURL || !hasV1BaseURL {
-				response.Diagnostics.AddAttributeError(
-					path.Root("region"),
-					"Invalid provider config",
-					`For a custom region, the "name", "app_base_url", "rest_base_url" and "v1_base_url" attributes must all be set.`,
-				)
-			}
+		if regionConfig.appBaseURL == "" || regionConfig.restBaseURL == "" || regionConfig.v1BaseURL == "" {
+			response.Diagnostics.AddAttributeError(
+				path.Root("region"),
+				"Incomplete Custom Region Configuration",
+				`For a custom region, "app_base_url", "rest_base_url", and "v1_base_url" must all be set (either in HCL or via their respective "SNYK_*_BASE_URL" environment variables).`,
+			)
 		}
 	}
 
 	// validate token
-	if config.Token.IsNull() && os.Getenv("SNYK_TOKEN") == "" {
+	if (config.Token.IsNull() || config.Token.ValueString() == "") && os.Getenv("SNYK_TOKEN") == "" {
 		response.Diagnostics.AddAttributeError(
 			path.Root("token"),
 			"Invalid provider config",
@@ -150,49 +153,41 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 	opts := []snyk.ClientOption{snyk.WithUserAgent(p.userAgent())}
 
 	// region logic
-	if config.Region.IsNull() || config.Region.IsUnknown() {
-		// no region block, fallback to env var, then default
-		regionName := os.Getenv("SNYK_REGION")
-		if regionName == "" {
-			regionName = defaultSnykRegion
-		}
-		opts = append(opts, snyk.WithRegionAlias(regionName))
-	} else {
-		var regionConfig snykProviderRegionModel
-		diags := request.Config.GetAttribute(ctx, path.Root("region"), &regionConfig)
-		response.Diagnostics.Append(diags...)
-		if response.Diagnostics.HasError() {
-			return
-		}
+	regionConfig, diags := p.resolveRegionConfig(ctx, config, request.Config)
+	response.Diagnostics.Append(diags...)
+	if response.Diagnostics.HasError() {
+		return
+	}
 
-		if !regionConfig.AppBaseURL.IsNull() {
-			// all attributes are present because ValidateConfig passed
-			appBaseURL := resolveHCLValueOrEnv(regionConfig.AppBaseURL, "SNYK_APP_BASE_URL")
-			restBaseURL := resolveHCLValueOrEnv(regionConfig.RESTBaseURL, "SNYK_REST_BASE_URL")
-			v1BaseURL := resolveHCLValueOrEnv(regionConfig.V1BaseURL, "SNYK_V1_BASE_URL")
-			opts = append(opts, snyk.WithRegion(snyk.Region{
-				Alias:       regionConfig.Name.ValueString(),
-				AppBaseURL:  appBaseURL,
-				RESTBaseURL: restBaseURL,
-				V1BaseURL:   v1BaseURL,
-			}))
-		} else {
-			if !regionConfig.Name.IsNull() {
-				// predefined region
-				opts = append(opts, snyk.WithRegionAlias(regionConfig.Name.ValueString()))
-			} else {
-				// fallback to default by empty region block
-				opts = append(opts, snyk.WithRegionAlias(defaultSnykRegion))
-			}
-		}
+	customRegionDefined := regionConfig.appBaseURL != "" || regionConfig.restBaseURL != "" || regionConfig.v1BaseURL != ""
+	if customRegionDefined {
+		// custom region, all attributes are present because ValidateConfig passed.
+		opts = append(opts, snyk.WithRegion(snyk.Region{
+			Alias:       regionConfig.name,
+			AppBaseURL:  regionConfig.appBaseURL,
+			RESTBaseURL: regionConfig.restBaseURL,
+			V1BaseURL:   regionConfig.v1BaseURL,
+		}))
+	} else if regionConfig.name != "" {
+		// // predefined region
+		opts = append(opts, snyk.WithRegionAlias(regionConfig.name))
+	} else {
+		// no custom or predefined region, fallback to default
+		opts = append(opts, snyk.WithRegionAlias(defaultSnykRegion))
 	}
 
 	// token logic
-	token := config.Token.ValueString()
-	if token == "" {
-		token = os.Getenv("SNYK_TOKEN")
+	token := os.Getenv("SNYK_TOKEN")
+	if !config.Token.IsNull() {
+		token = config.Token.ValueString()
 	}
 
+	tflog.Info(ctx, "Configuring Snyk SDK client", map[string]any{
+		"region_name":   regionConfig.name,
+		"app_base_url":  regionConfig.appBaseURL,
+		"rest_base_url": regionConfig.restBaseURL,
+		"v1_base_url":   regionConfig.v1BaseURL,
+	})
 	client, err := snyk.NewClient(token, opts...)
 	if err != nil {
 		response.Diagnostics.AddError(
@@ -229,11 +224,44 @@ func (p *snykProvider) userAgent() string {
 	return fmt.Sprintf("%s/%s (+%s)", name, p.version, comment)
 }
 
-// resolveHCLValueOrEnv return the value from the HCL if present, otherwise falls back to an environment variable.
-// HCL value (even empty string) takes precedence over the environment variable.
-func resolveHCLValueOrEnv(hclValue types.String, envVarName string) string {
-	if !hclValue.IsNull() {
-		return hclValue.ValueString()
+// resolvedRegionConfig contains resolved "region" block.
+type resolvedRegionConfig struct {
+	name        string
+	appBaseURL  string
+	restBaseURL string
+	v1BaseURL   string
+}
+
+func (p *snykProvider) resolveRegionConfig(ctx context.Context, config snykProviderModel, tfConfig tfsdk.Config) (resolvedRegionConfig, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	c := resolvedRegionConfig{
+		name:        os.Getenv("SNYK_REGION"),
+		appBaseURL:  os.Getenv("SNYK_APP_BASE_URL"),
+		restBaseURL: os.Getenv("SNYK_REST_BASE_URL"),
+		v1BaseURL:   os.Getenv("SNYK_V1_BASE_URL"),
 	}
-	return os.Getenv(envVarName)
+
+	if !config.Region.IsNull() && !config.Region.IsUnknown() {
+		var regionConfig snykProviderRegionModel
+		diags.Append(tfConfig.GetAttribute(ctx, path.Root("region"), &regionConfig)...)
+		if diags.HasError() {
+			return c, diags
+		}
+
+		// override with HCL values if they are explicitly set
+		if !regionConfig.Name.IsNull() {
+			c.name = regionConfig.Name.ValueString()
+		}
+		if !regionConfig.AppBaseURL.IsNull() {
+			c.appBaseURL = regionConfig.AppBaseURL.ValueString()
+		}
+		if !regionConfig.RESTBaseURL.IsNull() {
+			c.restBaseURL = regionConfig.RESTBaseURL.ValueString()
+		}
+		if !regionConfig.V1BaseURL.IsNull() {
+			c.v1BaseURL = regionConfig.V1BaseURL.ValueString()
+		}
+	}
+
+	return c, diags
 }
