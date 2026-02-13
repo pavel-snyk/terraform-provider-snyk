@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/pavel-snyk/snyk-sdk-go/v2/snyk"
+
 	"github.com/pavel-snyk/terraform-provider-snyk/internal/provider/helper"
 )
 
