@@ -1,4 +1,9 @@
 
+<a name="v1.0.0-rc2"></a>
+## v1.0.0-rc2 (2026-02-13)
+### Bug Fixes
+* **tools**: adjust path to git-chglog in release workflow
+
 <a name="v1.0.0-rc1"></a>
 ## v1.0.0-rc1 (2026-02-13)
 ### Bug Fixes
