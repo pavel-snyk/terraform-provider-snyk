@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/pavel-snyk/snyk-sdk-go/v2/snyk"
+	"github.com/pavel-snyk/terraform-provider-snyk/internal/provider/helper"
 )
 
 var (
@@ -132,6 +133,14 @@ func (r *organizationResource) Create(ctx context.Context, request resource.Crea
 		"snyk_request_id": resp.SnykRequestID,
 	})
 
+	tflog.Info(ctx, "Waiting for organization tenant id to be populated", map[string]any{"org_id": orgV1.ID})
+	err = helper.WaitOrganizationTenantIDPopulated(ctx, r.client, orgV1.ID)
+	if err != nil {
+		response.Diagnostics.AddError("Unable to wait for organization tenant id to be populated", err.Error())
+		return
+	}
+	tflog.Info(ctx, "Organization tenant id is populated", map[string]any{"org_id": orgV1.ID})
+
 	tflog.Trace(ctx, "Getting organization with enriched properties", map[string]any{"org_id": orgV1.ID})
 	organization, resp, err := r.client.Orgs.Get(ctx, orgV1.ID, &snyk.GetOrganizationOptions{Expand: "tenant"})
 	if err != nil {
@@ -143,26 +152,14 @@ func (r *organizationResource) Create(ctx context.Context, request resource.Crea
 		"org_id":          orgV1.ID,
 		"snyk_request_id": resp.SnykRequestID,
 	})
-	// tenant info is not available immediately after org creation with V1, we fetch tenantID from group endpoint
-	tflog.Trace(ctx, "Getting group with tenant information", map[string]any{"group_id": orgV1.Group.ID})
-	group, resp, err := r.client.Groups.Get(ctx, orgV1.Group.ID)
-	if err != nil {
-		response.Diagnostics.AddError("Unable to get group", err.Error())
-		return
-	}
-	tflog.Trace(ctx, "Got group with tenant information", map[string]any{
-		"data":            group,
-		"group_id":        orgV1.Group.ID,
-		"snyk_request_id": resp.SnykRequestID,
-	})
 
 	// map response body to model
 	data.GroupID = types.StringValue(organization.Attributes.GroupID)
 	data.ID = types.StringValue(organization.ID)
 	data.Name = types.StringValue(organization.Attributes.Name)
 	data.Slug = types.StringValue(organization.Attributes.Slug)
-	if group.Relationships != nil {
-		data.TenantID = types.StringValue(group.Relationships.Tenant.Data.ID)
+	if organization.Relationships != nil {
+		data.TenantID = types.StringValue(organization.Relationships.Tenant.Data.ID)
 	}
 
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
