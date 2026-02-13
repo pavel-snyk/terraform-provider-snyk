@@ -24,6 +24,8 @@ linters:
       rules:
         main:
           list-mode: lax
+          allow:
+            - 'github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry'
           deny:
             - pkg: "github.com/hashicorp/terraform-plugin-sdk/v2" # prefix
               desc: "Use Terraform Plugin Framework"
