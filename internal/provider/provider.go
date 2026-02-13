@@ -218,7 +218,7 @@ func (p *snykProvider) DataSources(_ context.Context) []func() datasource.DataSo
 	return []func() datasource.DataSource{
 		NewOrganizationDataSource,
 		//NewProjectDataSource,
-		//NewUserDataSource,
+		NewUserDataSource,
 	}
 }
 

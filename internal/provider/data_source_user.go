@@ -1,105 +1,111 @@
 package provider
 
-//import (
-//	"context"
-//
-//	"github.com/hashicorp/terraform-plugin-framework/datasource"
-//	"github.com/hashicorp/terraform-plugin-framework/diag"
-//	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-//	"github.com/hashicorp/terraform-plugin-framework/types"
-//	"github.com/pavel-snyk/snyk-sdk-go/snyk"
-//)
-//
-//var _ datasource.DataSource = (*userDataSource)(nil)
-//
-//type userDataSource struct {
-//	client *snyk.Client
-//}
-//
-//func NewUserDataSource() datasource.DataSource {
-//	return &userDataSource{}
-//}
-//
-//func (d *userDataSource) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
-//	response.TypeName = "snyk_user"
-//}
-//
-//func (d *userDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-//	return tfsdk.Schema{
-//		Description: "The user data source provides information about an existing Snyk user.",
-//		Attributes: map[string]tfsdk.Attribute{
-//			"email": {
-//				Description: "The email of the user.",
-//				Type:        types.StringType,
-//				Computed:    true,
-//			},
-//			"id": {
-//				Description: "The ID of the user.",
-//				Type:        types.StringType,
-//				Computed:    true,
-//				Optional:    true,
-//			},
-//			"name": {
-//				Description: "The name of the user.",
-//				Type:        types.StringType,
-//				Computed:    true,
-//			},
-//			"username": {
-//				Description: "The username of the user.",
-//				Type:        types.StringType,
-//				Computed:    true,
-//			},
-//		},
-//	}, nil
-//}
-//
-//func (d *userDataSource) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
-//	if request.ProviderData == nil {
-//		return
-//	}
-//
-//	client := request.ProviderData.(*snyk.Client)
-//	d.client = client
-//}
-//
-//type userData struct {
-//	Email    types.String `tfsdk:"email"`
-//	ID       types.String `tfsdk:"id"`
-//	Name     types.String `tfsdk:"name"`
-//	Username types.String `tfsdk:"username"`
-//}
-//
-//func (d *userDataSource) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
-//	var uData userData
-//	if diags := request.Config.Get(ctx, &uData); diags.HasError() {
-//		response.Diagnostics = diags
-//		return
-//	}
-//
-//	if uData.ID.Null {
-//		currentUser, _, err := d.client.Users.GetCurrent(ctx)
-//		if err != nil {
-//			response.Diagnostics.AddError("Error retrieving user", err.Error())
-//			return
-//		}
-//
-//		uData.ID = types.String{Value: currentUser.ID}
-//	}
-//
-//	// workaround to get the name (not username!)
-//	user, _, err := d.client.Users.Get(ctx, uData.ID.Value)
-//	if err != nil {
-//		response.Diagnostics.AddError("Error retrieving user", err.Error())
-//		return
-//	}
-//
-//	uData.Email = types.String{Value: user.Email}
-//	uData.Name = types.String{Value: user.Name}
-//	uData.Username = types.String{Value: user.Username}
-//
-//	diags := response.State.Set(ctx, uData)
-//	response.Diagnostics.Append(diags...)
-//	if response.Diagnostics.HasError() {
-//		return
-//	}
-//}
+import (
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/pavel-snyk/snyk-sdk-go/v2/snyk"
+)
+
+var (
+	_ datasource.DataSource              = (*userDataSource)(nil)
+	_ datasource.DataSourceWithConfigure = (*userDataSource)(nil)
+)
+
+// userDataSource is the user datasource implementation.
+type userDataSource struct {
+	client *snyk.Client
+}
+
+// userDataSourceModel maps the user datasource schema data.
+type userDataSourceModel struct {
+	Email    types.String `tfsdk:"email"`
+	ID       types.String `tfsdk:"id"`
+	Name     types.String `tfsdk:"name"`
+	Username types.String `tfsdk:"username"`
+}
+
+func NewUserDataSource() datasource.DataSource {
+	return &userDataSource{}
+}
+
+func (d *userDataSource) Metadata(_ context.Context, _ datasource.MetadataRequest, response *datasource.MetadataResponse) {
+	response.TypeName = "snyk_user"
+}
+
+func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
+	response.Schema = schema.Schema{
+		MarkdownDescription: `
+The user data source provides information about an existing Snyk user.
+
+A user in Snyk is a member of an Organization, that have access to Projects.
+See [Manage users in Organizations](https://docs.snyk.io/snyk-platform-administration/groups-and-organizations/organizations/manage-users-in-organizations).
+`,
+		Attributes: map[string]schema.Attribute{
+			"email": schema.StringAttribute{
+				MarkdownDescription: "The email of the user.",
+				Computed:            true,
+			},
+			"id": schema.StringAttribute{
+				MarkdownDescription: "The ID of the user.",
+				Computed:            true,
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "The name of the user.",
+				Computed:            true,
+			},
+			"username": schema.StringAttribute{
+				MarkdownDescription: "The username of the user.",
+				Computed:            true,
+			},
+		},
+	}
+}
+
+func (d *userDataSource) Configure(_ context.Context, request datasource.ConfigureRequest, response *datasource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
+
+	client, ok := request.ProviderData.(*snyk.Client)
+	if !ok {
+		response.Diagnostics.AddError(
+			"Unconfigured Snyk client",
+			"Please report this issue to the provider developers.",
+		)
+		return
+	}
+
+	d.client = client
+}
+
+func (d *userDataSource) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
+	var data userDataSourceModel
+
+	response.Diagnostics.Append(request.Config.Get(ctx, &data)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	tflog.Trace(ctx, "Getting self user")
+	user, resp, err := d.client.Users.GetSelf(ctx)
+	if err != nil {
+		response.Diagnostics.AddError("Unable to get user", err.Error())
+		return
+	}
+	tflog.Trace(ctx, "Got self user", map[string]any{
+		"data":            user,
+		"snyk_request_id": resp.SnykRequestID,
+	})
+
+	// map response body to model
+	data.Email = types.StringValue(user.Attributes.Email)
+	data.ID = types.StringValue(user.ID)
+	data.Name = types.StringValue(user.Attributes.Name)
+	data.Username = types.StringValue(user.Attributes.Username)
+
+	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
+}

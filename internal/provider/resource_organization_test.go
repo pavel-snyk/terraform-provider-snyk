@@ -49,6 +49,8 @@ func init() {
 }
 
 func TestAccSnykOrganizationResource(t *testing.T) {
+	t.Parallel()
+
 	name := acctest.RandomWithPrefix(accTestPrefix)
 	nameUpdated := acctest.RandomWithPrefix(accTestPrefix)
 	groupID := accTestGroupID()
