@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	_ datasource.DataSource              = &organizationDataSource{}
-	_ datasource.DataSourceWithConfigure = &organizationDataSource{}
+	_ datasource.DataSource              = (*organizationDataSource)(nil)
+	_ datasource.DataSourceWithConfigure = (*organizationDataSource)(nil)
 )
 
 // organizationDataSource is the organization datasource implementation.
