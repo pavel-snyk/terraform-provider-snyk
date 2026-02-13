@@ -35,7 +35,7 @@ jobs:
     name: unit tests
     runs-on: ubuntu-latest
     needs: build
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -72,11 +72,14 @@ jobs:
     name: acceptance tests (terraform ${{ matrix.terraform-version }})
     runs-on: ubuntu-latest
     needs: build
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
-      SNYK_ENDPOINT: ${{ secrets.SNYK_ENDPOINT }}
+      SNYK_APP_BASE_URL: ${{ secrets.SNYK_APP_BASE_URL }}
       SNYK_GROUP_ID: ${{ secrets.SNYK_GROUP_ID }}
+      SNYK_REGION: ${{ secrets.SNYK_REGION }}
+      SNYK_REST_BASE_URL: ${{ secrets.SNYK_REST_BASE_URL }}
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      SNYK_V1_BASE_URL: ${{ secrets.SNYK_V1_BASE_URL }}
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -119,6 +122,44 @@ jobs:
 
       - name: Run acceptance tests
         run: make testacc
+
+  sweeper:
+    name: sweeper cleanup
+    runs-on: ubuntu-latest
+    needs: acceptance-tests
+    timeout-minutes: 15
+    env:
+      SNYK_APP_BASE_URL: ${{ secrets.SNYK_APP_BASE_URL }}
+      SNYK_GROUP_ID: ${{ secrets.SNYK_GROUP_ID }}
+      SNYK_REGION: ${{ secrets.SNYK_REGION }}
+      SNYK_REST_BASE_URL: ${{ secrets.SNYK_REST_BASE_URL }}
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      SNYK_V1_BASE_URL: ${{ secrets.SNYK_V1_BASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+
+      - name: Fix permissions for cache directories
+        run: |
+          chmod -R 0755 ~/.cache/go-build ~/go/pkg/mod || true
+
+      - name: Set up cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum', 'tools/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run sweeper cleanup
+        run: make sweep
 
   docs:
     name: documentation
