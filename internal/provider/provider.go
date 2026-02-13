@@ -178,8 +178,19 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 
 	// token logic
 	token := os.Getenv("SNYK_TOKEN")
-	if !config.Token.IsNull() {
+	if !config.Token.IsNull() && !config.Token.IsUnknown() {
 		token = config.Token.ValueString()
+	}
+	if token == "" {
+		response.Diagnostics.AddAttributeError(
+			path.Root("token"),
+			"Invalid provider config",
+			`The Snyk API token must be provided via the "token" attribute or the "SNYK_TOKEN" environment variable.`,
+		)
+	}
+
+	if response.Diagnostics.HasError() {
+		return
 	}
 
 	tflog.Info(ctx, "Configuring Snyk SDK client", map[string]any{
