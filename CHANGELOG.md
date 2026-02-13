@@ -1,4 +1,44 @@
 
+<a name="v1.0.0-rc1"></a>
+## v1.0.0-rc1 (2026-02-13)
+### Bug Fixes
+* **provider**: catch edge case with empty config token
+* **resource/snyk_organization**: wait until tenant is provisioned by creation
+### Code Refactoring
+* allow to set custom urls with envvars
+* re-generate tfdocs
+* disable existing resources due terraform-framework migration
+* **provider**: simplify resolving of region block
+* **provider**: move validation region logic into ValidateConfig
+### Documentation
+* **datasource/snyk_user**: update documentation
+* **resource/snyk_organization**: update documentation
+### Features
+* refactor usage of new Snyk SDK client
+* **datasource/snyk_organization**: migrate datasource to use new Snyk SDK
+* **datasource/snyk_user**: migrate datasource to use new Snyk SDK
+* **provider**: add support for legacy V1 Snyk API
+* **resource/snyk_organization**: migrate resource to use new Snyk SDK
+### Maintaining
+* **cicd**: fix typo for go pkg directory
+* **cicd**: stop running acceptance tests on main branch
+* **cicd**: run sweepers after acceptance tests
+* **cicd**: pass new envvars for acceptance tests
+* **datasource/snyk_organization**: add acceptance tests
+* **deps**: bump hashicorp/setup-terraform from 2 to 3
+* **deps**: upgrade snyk-sdk-go to v2 dev version
+* **deps**: bump actions to latest stable versions
+* **deps**: bump all dependencies to latest stable versions
+* **lint**: allow usage of retry package from SDKv2
+* **resource/snyk_organization**: refactor acceptance tests using new tf framework
+* **test**: add sweepers to cleanup leftover infrastructure
+* **tools**: migrate to golangci-lint v2
+### BREAKING CHANGE
+
+upgrade terraform-framework deps after 4 years shows a huge drift
+in API for provider, resources and data sources. Because Snyk SDK will be migrated
+from v1 API to REST API, we have to adjust/rewrite all API calls anyway.
+
 <a name="v0.7.1"></a>
 ## v0.7.1 (2023-03-11)
 ### Maintaining
