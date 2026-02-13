@@ -74,9 +74,12 @@ jobs:
     needs: build
     timeout-minutes: 15
     env:
-      SNYK_ENDPOINT: ${{ secrets.SNYK_ENDPOINT }}
+      SNYK_APP_BASE_URL: ${{ secrets.SNYK_APP_BASE_URL }}
       SNYK_GROUP_ID: ${{ secrets.SNYK_GROUP_ID }}
+      SNYK_REGION: ${{ secrets.SNYK_REGION }}
+      SNYK_REST_BASE_URL: ${{ secrets.SNYK_REST_BASE_URL }}
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      SNYK_V1_BASE_URL: ${{ secrets.SNYK_V1_BASE_URL }}
     strategy:
       fail-fast: false
       max-parallel: 1
