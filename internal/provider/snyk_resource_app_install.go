@@ -74,9 +74,10 @@ powered by OAuth 2.0 for a developer-friendly experience. See [Snyk Apps](https:
 				},
 			},
 			"client_secret": schema.StringAttribute{
-				MarkdownDescription: "The OAuth2 client secret for the app.",
-				Computed:            true,
-				Sensitive:           true,
+				MarkdownDescription: "The OAuth2 client secret for the app installation. This secret is only available " +
+					"upon resource creation and will not be populated for an imported resource.",
+				Computed:  true,
+				Sensitive: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
