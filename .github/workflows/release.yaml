@@ -37,6 +37,7 @@ jobs:
       - name: Generate changelog
         run: |
           tools/bin/git-chglog --config .github/changelog/config.yaml --output .release/DRAFT.md $(git describe --tags $(git rev-list --tags --max-count=1))
+          cat .release/DRAFT.md
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
