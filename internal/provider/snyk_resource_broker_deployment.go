@@ -322,7 +322,7 @@ func (r *brokerDeploymentResource) Read(ctx context.Context, request resource.Re
 		response.Diagnostics.Append(diags...)
 		data.Metadata = metadataMap
 	} else {
-		data.Metadata = types.MapNull(types.StringType)
+		data.Metadata = types.MapValueMust(types.StringType, map[string]attr.Value{})
 	}
 
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
