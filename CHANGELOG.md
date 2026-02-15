@@ -1,4 +1,12 @@
 
+<a name="v1.0.0-rc3"></a>
+## v1.0.0-rc3 (2026-02-15)
+### Documentation
+* **resource/snyk_app_install**: update documentation with examples
+### Features
+* **resource/snyk_app_install**: add resource to manage app installations
+* **resource/snyk_broker_deployment**: add resource to manage broker deployments
+
 <a name="v1.0.0-rc2"></a>
 ## v1.0.0-rc2 (2026-02-13)
 ### Bug Fixes
