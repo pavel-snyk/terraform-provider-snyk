@@ -75,8 +75,6 @@ func init() {
 }
 
 func TestAccSnykAppInstallResource(t *testing.T) {
-	t.Parallel()
-
 	orgName := acctest.RandomWithPrefix(accTestPrefix)
 	groupID := accTestGroupID()
 

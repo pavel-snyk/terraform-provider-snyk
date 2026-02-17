@@ -216,6 +216,7 @@ func (p *snykProvider) Configure(ctx context.Context, request provider.Configure
 
 func (p *snykProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		NewAppInstallDataSource,
 		NewOrganizationDataSource,
 		//NewProjectDataSource,
 		NewUserDataSource,
