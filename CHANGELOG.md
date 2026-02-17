@@ -1,4 +1,14 @@
 
+<a name="v1.0.0-rc4"></a>
+## v1.0.0-rc4 (2026-02-17)
+### Documentation
+* **datasource/snyk_app_install**: update documentation with examples
+### Features
+* **datasource/snyk_app_install**: add datasource for snyk app installation
+### Maintaining
+* rename files aligning with official naming schema
+* show generated changelog during release process
+
 <a name="v1.0.0-rc3"></a>
 ## v1.0.0-rc3 (2026-02-15)
 ### Documentation
