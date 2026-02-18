@@ -5,7 +5,6 @@ resource "snyk_broker_deployment" "dev" {
 
   metadata = {
     env     = "dev"
-    cluster = "dev"
     name    = "deployment for frontend team on staging cluster"
     comment = "managed by terraform"
   }
