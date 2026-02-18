@@ -1,4 +1,12 @@
 
+<a name="v1.0.0-rc5"></a>
+## v1.0.0-rc5 (2026-02-18)
+### Features
+* **resource/snyk_broker_deployment_credential**: add resource to manage credential references
+### Maintaining
+* **deps**: bump github.com/hashicorp/terraform-plugin-sdk/v2
+* **deps**: upgrade snyk-sdk-go to v2 latest dev version
+
 <a name="v1.0.0-rc4"></a>
 ## v1.0.0-rc4 (2026-02-17)
 ### Documentation
