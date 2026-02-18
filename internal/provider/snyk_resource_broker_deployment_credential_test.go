@@ -15,9 +15,8 @@ import (
 )
 
 func init() {
-	resource.AddTestSweepers("snyk_broker_deployment", &resource.Sweeper{
-		Name:         "snyk_broker_deployment",
-		Dependencies: []string{"snyk_broker_deployment_credential"},
+	resource.AddTestSweepers("snyk_broker_deployment_credential", &resource.Sweeper{
+		Name: "snyk_broker_deployment_credential",
 		F: func(region string) error {
 			ctx := context.Background()
 			client, err := sharedClient(region)
@@ -64,6 +63,7 @@ func init() {
 									"snyk_request_id", resp.SnykRequestID,
 									"tenant_id", tenantID,
 								)
+								continue
 							}
 
 							for _, brokerDeployment := range brokerDeployments {
@@ -73,20 +73,36 @@ func init() {
 								}
 
 								if strings.HasPrefix(metadata["env"], accTestPrefix) {
-									slog.Info(
-										"Deleting snyk_broker_deployment",
-										"app_install_id", appInstall.ID,
-										"broker_deployment_id", brokerDeployment.ID,
-										"tenant_id", tenantID,
-									)
-									resp, err := client.Brokers.DeleteDeployment(ctx, tenantID, appInstall.ID, brokerDeployment.ID)
+									brokerDeploymentCredentials, resp, err := client.Brokers.ListDeploymentCredentials(ctx, tenantID, appInstall.ID, brokerDeployment.ID)
 									if err != nil {
 										slog.Warn(
-											"Error deleting broker deployment during sweep",
+											"Error listing broker deployment credentials",
+											"app_install_id", appInstall.ID,
 											"broker_deployment_id", brokerDeployment.ID,
 											"error", err,
 											"snyk_request_id", resp.SnykRequestID,
+											"tenant_id", tenantID,
 										)
+										continue
+									}
+
+									for _, brokerDeploymentCredential := range brokerDeploymentCredentials {
+										slog.Info(
+											"Deleting snyk_broker_deployment credentials",
+											"app_install_id", appInstall.ID,
+											"broker_deployment_credential_id", brokerDeploymentCredential.ID,
+											"broker_deployment_id", brokerDeployment.ID,
+											"tenant_id", tenantID,
+										)
+										resp, err := client.Brokers.DeleteDeploymentCredential(ctx, tenantID, appInstall.ID, brokerDeployment.ID, brokerDeploymentCredential.ID)
+										if err != nil {
+											slog.Warn(
+												"Error deleting broker deployment credential during sweep",
+												"broker_deployment_credential_id", brokerDeploymentCredential.ID,
+												"error", err,
+												"snyk_request_id", resp.SnykRequestID,
+											)
+										}
 									}
 								}
 							}
@@ -103,11 +119,11 @@ func init() {
 	})
 }
 
-func TestAccSnykBrokerDeploymentResource(t *testing.T) {
-	t.Parallel()
-
+func TestAccSnykBrokerDeploymentCredentialResource(t *testing.T) {
 	orgName := acctest.RandomWithPrefix(accTestPrefix)
 	groupID := accTestGroupID()
+	envVarName := acctest.RandString(5)
+	envVarNameUpdated := acctest.RandString(10)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -115,102 +131,71 @@ func TestAccSnykBrokerDeploymentResource(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccSnykBrokerDeploymentResourceConfig(orgName, groupID, universalBrokerAppID),
+				Config: testAccSnykBrokerDeploymentCredentialResourceConfig(orgName, groupID, universalBrokerAppID, envVarName),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
+						"snyk_broker_deployment_credential.test",
 						tfjsonpath.New("app_install_id"),
 						knownvalue.NotNull(),
 					),
 					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
+						"snyk_broker_deployment_credential.test",
+						tfjsonpath.New("broker_connection_type"),
+						knownvalue.StringExact("gitlab"),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_broker_deployment_credential.test",
+						tfjsonpath.New("broker_deployment_id"),
+						knownvalue.NotNull(),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_broker_deployment_credential.test",
+						tfjsonpath.New("environment_variable_name"),
+						knownvalue.StringExact(envVarName),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_broker_deployment_credential.test",
 						tfjsonpath.New("id"),
 						knownvalue.NotNull(),
 					),
 					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
-						tfjsonpath.New("metadata"),
-						knownvalue.MapExact(map[string]knownvalue.Check{}),
-					),
-					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
-						tfjsonpath.New("organization_id"),
-						knownvalue.NotNull(),
-					),
-					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
+						"snyk_broker_deployment_credential.test",
 						tfjsonpath.New("tenant_id"),
 						knownvalue.NotNull(),
 					),
 				},
 			},
-			// Update and Read testing with adding "metadata"
+			// Update and Read testing
 			{
-				Config: testAccSnykBrokerDeploymentResourceConfigWithMetadata(orgName, groupID, universalBrokerAppID),
+				Config: testAccSnykBrokerDeploymentCredentialResourceConfig(orgName, groupID, universalBrokerAppID, envVarNameUpdated),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
+						"snyk_broker_deployment_credential.test",
 						tfjsonpath.New("app_install_id"),
 						knownvalue.NotNull(),
 					),
 					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
+						"snyk_broker_deployment_credential.test",
+						tfjsonpath.New("broker_connection_type"),
+						knownvalue.StringExact("gitlab"),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_broker_deployment_credential.test",
+						tfjsonpath.New("broker_deployment_id"),
+						knownvalue.NotNull(),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_broker_deployment_credential.test",
+						tfjsonpath.New("environment_variable_name"),
+						knownvalue.StringExact(envVarNameUpdated),
+					),
+					statecheck.ExpectKnownValue(
+						"snyk_broker_deployment_credential.test",
 						tfjsonpath.New("id"),
 						knownvalue.NotNull(),
 					),
 					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
-						tfjsonpath.New("metadata"),
-						knownvalue.MapSizeExact(2),
-					),
-					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
-						tfjsonpath.New("metadata").AtMapKey("env"),
-						knownvalue.StringExact(orgName),
-					),
-					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
-						tfjsonpath.New("metadata").AtMapKey("comment"),
-						knownvalue.StringExact("created by terraform acceptance tests"),
-					),
-					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
-						tfjsonpath.New("organization_id"),
-						knownvalue.NotNull(),
-					),
-					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
-						tfjsonpath.New("tenant_id"),
-						knownvalue.NotNull(),
-					),
-				},
-			},
-			// Update and Read testing with removing "metadata"
-			{
-				Config: testAccSnykBrokerDeploymentResourceConfig(orgName, groupID, universalBrokerAppID),
-				ConfigStateChecks: []statecheck.StateCheck{
-					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
-						tfjsonpath.New("app_install_id"),
-						knownvalue.NotNull(),
-					),
-					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
-						tfjsonpath.New("id"),
-						knownvalue.NotNull(),
-					),
-					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
-						tfjsonpath.New("metadata"),
-						knownvalue.MapExact(map[string]knownvalue.Check{}),
-					),
-					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
-						tfjsonpath.New("organization_id"),
-						knownvalue.NotNull(),
-					),
-					statecheck.ExpectKnownValue(
-						"snyk_broker_deployment.test",
+						"snyk_broker_deployment_credential.test",
 						tfjsonpath.New("tenant_id"),
 						knownvalue.NotNull(),
 					),
@@ -220,8 +205,17 @@ func TestAccSnykBrokerDeploymentResource(t *testing.T) {
 	})
 }
 
-func testAccSnykBrokerDeploymentResourceConfig(orgName, groupID, appID string) string {
+func testAccSnykBrokerDeploymentCredentialResourceConfig(orgName, groupID, appID, envVarName string) string {
 	return fmt.Sprintf(`
+resource "snyk_broker_deployment_credential" "test" {
+  app_install_id       = snyk_app_install.test.id
+  tenant_id            = snyk_organization.test.tenant_id
+  broker_deployment_id = snyk_broker_deployment.test.id
+
+  broker_connection_type    = "gitlab"
+  environment_variable_name = %[4]q
+}
+
 resource "snyk_broker_deployment" "test" {
   app_install_id  = snyk_app_install.test.id
   organization_id = snyk_organization.test.id
@@ -237,30 +231,5 @@ resource "snyk_organization" "test" {
   name     = %[1]q
   group_id = %[2]q
 }
-`, orgName, groupID, appID)
-}
-
-func testAccSnykBrokerDeploymentResourceConfigWithMetadata(orgName, groupID, appID string) string {
-	return fmt.Sprintf(`
-resource "snyk_broker_deployment" "test" {
-  app_install_id  = snyk_app_install.test.id
-  organization_id = snyk_organization.test.id
-  tenant_id       = snyk_organization.test.tenant_id
-
-  metadata = {
-    env     = %[1]q
-    comment = "created by terraform acceptance tests"
-  }
-}
-
-resource "snyk_app_install" "test" {
-  app_id          = %[3]q
-  organization_id = snyk_organization.test.id
-}
-
-resource "snyk_organization" "test" {
-  name     = %[1]q
-  group_id = %[2]q
-}
-`, orgName, groupID, appID)
+`, orgName, groupID, appID, envVarName)
 }

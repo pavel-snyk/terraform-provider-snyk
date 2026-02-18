@@ -228,6 +228,7 @@ func (p *snykProvider) Resources(_ context.Context) []func() resource.Resource {
 		//NewIntegrationResource,
 		NewAppInstallResource,
 		NewBrokerDeploymentResource,
+		NewBrokerDeploymentCredentialResource,
 		NewOrganizationResource,
 	}
 }
