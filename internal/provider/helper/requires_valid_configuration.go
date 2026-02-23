@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -44,12 +43,12 @@ func (av requiresValidConfiguration) ValidateObject(ctx context.Context, request
 		return
 	}
 
-	var connectionTypeVal attr.Value
+	var connectionTypeVal types.String
 	response.Diagnostics.Append(request.Config.GetAttribute(ctx, matchedPaths[0], &connectionTypeVal)...)
 	if connectionTypeVal.IsNull() || connectionTypeVal.IsUnknown() {
 		return
 	}
-	connectionType := connectionTypeVal.(types.String).ValueString()
+	connectionType := connectionTypeVal.ValueString()
 
 	allowedConnectionTypes := allowedConnectionTypes()
 	slices.Sort(allowedConnectionTypes)
@@ -113,7 +112,7 @@ Please provide either the PAT or the username/password combination.`,
 		)
 	}
 
-	if !patIsSet && !(usernameIsSet && passwordIsSet) {
+	if !patIsSet && (!usernameIsSet || !passwordIsSet) {
 		response.Diagnostics.AddAttributeError(
 			path,
 			"Incomplete Jira authentication attributes",
