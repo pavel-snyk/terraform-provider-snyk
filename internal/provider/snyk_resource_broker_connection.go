@@ -60,6 +60,11 @@ func (r *brokerConnectionResource) Metadata(_ context.Context, _ resource.Metada
 func (r *brokerConnectionResource) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: `
+The broker connection resource allows to manage Snyk broker connections.
+
+A Snyk broker connection lives in Snyk broker deployment and is configured to communicate
+with specific private resources: SCMs, JIRA, and others. For more information,
+see [Universal Broker documentation](https://docs.snyk.io/implementation-and-setup/enterprise-setup/snyk-broker/universal-broker).
 `,
 		Attributes: map[string]schema.Attribute{
 			"app_install_id": schema.StringAttribute{
