@@ -1,4 +1,15 @@
 
+<a name="v1.0.0-rc6"></a>
+## v1.0.0-rc6 (2026-02-23)
+### Documentation
+* **resource/snyk_broker_connection**: add gitlab example
+### Features
+* **resource/snyk_broker_connection**: add support for jira connections
+* **resource/snyk_broker_connection**: add resource to manage broker connections
+### Maintaining
+* **deps**: upgrade snyk-sdk-go to v2 latest dev version
+* **resource/snyk_broker_connection**: add acceptance tests
+
 <a name="v1.0.0-rc5"></a>
 ## v1.0.0-rc5 (2026-02-18)
 ### Features
