@@ -105,6 +105,8 @@ github.com/hashicorp/terraform-json v0.27.2 h1:BwGuzM6iUPqf9JYM/Z4AF1OJ5VVJEEzoK
 github.com/hashicorp/terraform-json v0.27.2/go.mod h1:GzPLJ1PLdUG5xL6xn1OXWIjteQRT2CNT9o/6A9mi9hE=
 github.com/hashicorp/terraform-plugin-framework v1.17.0 h1:JdX50CFrYcYFY31gkmitAEAzLKoBgsK+iaJjDC8OexY=
 github.com/hashicorp/terraform-plugin-framework v1.17.0/go.mod h1:4OUXKdHNosX+ys6rLgVlgklfxN3WHR5VHSOABeS/BM0=
+github.com/hashicorp/terraform-plugin-framework-validators v0.19.0 h1:Zz3iGgzxe/1XBkooZCewS0nJAaCFPFPHdNJd8FgE4Ow=
+github.com/hashicorp/terraform-plugin-framework-validators v0.19.0/go.mod h1:GBKTNGbGVJohU03dZ7U8wHqc2zYnMUawgCN+gC0itLc=
 github.com/hashicorp/terraform-plugin-go v0.29.0 h1:1nXKl/nSpaYIUBU1IG/EsDOX0vv+9JxAltQyDMpq5mU=
 github.com/hashicorp/terraform-plugin-go v0.29.0/go.mod h1:vYZbIyvxyy0FWSmDHChCqKvI40cFTDGSb3D8D70i9GM=
 github.com/hashicorp/terraform-plugin-log v0.10.0 h1:eu2kW6/QBVdN4P3Ju2WiB2W3ObjkAsyfBsL3Wh1fj3g=
@@ -152,8 +154,8 @@ github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zx
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
 github.com/oklog/run v1.1.0/go.mod h1:sVPdnTZT1zYwAJeCMu2Th4T21pA3FPOQRfWjQlk7DVU=
-github.com/pavel-snyk/snyk-sdk-go/v2 v2.0.0-20260217221217-f22ea800e90e h1:PiJTg+2RwenqTTjj0rFKH9353ZUyMC/0fQycAUqBJ2k=
-github.com/pavel-snyk/snyk-sdk-go/v2 v2.0.0-20260217221217-f22ea800e90e/go.mod h1:7E28mxL/T/EA3hMo9Fa0FjYuLDq0uUKJFB05oaaPoog=
+github.com/pavel-snyk/snyk-sdk-go/v2 v2.0.0-20260219231308-fe0d7c64619c h1:ebrrL0d1Vak5/KQBsCOTmytUFGzXwtWKaDPTJ9XxYHo=
+github.com/pavel-snyk/snyk-sdk-go/v2 v2.0.0-20260219231308-fe0d7c64619c/go.mod h1:7E28mxL/T/EA3hMo9Fa0FjYuLDq0uUKJFB05oaaPoog=
 github.com/pjbgf/sha1cd v0.3.2 h1:a9wb0bp1oC2TGwStyn0Umc/IGKQnEgF0vVaZ8QF8eo4=
 github.com/pjbgf/sha1cd v0.3.2/go.mod h1:zQWigSxVmsHEZow5qaLtPYxpcKMMQpa09ixqBxuCS6A=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
