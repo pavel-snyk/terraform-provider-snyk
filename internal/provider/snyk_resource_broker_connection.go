@@ -4,14 +4,18 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/pavel-snyk/snyk-sdk-go/v2/snyk"
+
+	"github.com/pavel-snyk/terraform-provider-snyk/internal/provider/helper"
 )
 
 var (
@@ -36,9 +40,13 @@ type brokerConnectionResourceModel struct {
 }
 
 type brokerConnectionResourceConfigurationModel struct {
-	BrokerClientURL         types.String `tfsdk:"broker_client_url"`
-	GitLabHostname          types.String `tfsdk:"gitlab_hostname"`
-	GitLabTokenCredentialID types.String `tfsdk:"gitlab_token_credential_id"`
+	BrokerClientURL          types.String `tfsdk:"broker_client_url"`
+	GitLabHostname           types.String `tfsdk:"gitlab_hostname"`
+	GitLabTokenCredentialID  types.String `tfsdk:"gitlab_token_credential_id"`
+	JiraHostname             types.String `tfsdk:"jira_hostname"`
+	JiraPasswordCredentialID types.String `tfsdk:"jira_password_credential_id"`
+	JiraPATCredentialID      types.String `tfsdk:"jira_pat_credential_id"`
+	JiraUsername             types.String `tfsdk:"jira_username"`
 }
 
 func NewBrokerConnectionResource() resource.Resource {
@@ -71,6 +79,9 @@ func (r *brokerConnectionResource) Schema(_ context.Context, _ resource.SchemaRe
 			"configuration": schema.SingleNestedAttribute{
 				MarkdownDescription: "The configuration parameters depending on broker connection type.",
 				Required:            true,
+				Validators: []validator.Object{
+					helper.RequiresValidConfiguration(path.MatchRoot("type")),
+				},
 				Attributes: map[string]schema.Attribute{
 					"broker_client_url": schema.StringAttribute{
 						MarkdownDescription: "The URL of the broker client used by webhooks. It's recommended to use regional Snyk API URL.",
@@ -88,6 +99,34 @@ func (r *brokerConnectionResource) Schema(_ context.Context, _ resource.SchemaRe
 					},
 					"gitlab_token_credential_id": schema.StringAttribute{
 						MarkdownDescription: "The ID of the broker deployment credential for GitLab token.",
+						Optional:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"jira_hostname": schema.StringAttribute{
+						MarkdownDescription: "The Jira hostname.",
+						Optional:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"jira_password_credential_id": schema.StringAttribute{
+						MarkdownDescription: "The ID of the broker deployment credential for Jira password.",
+						Optional:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"jira_pat_credential_id": schema.StringAttribute{
+						MarkdownDescription: "The ID of the broker deployment credential for Jira PAT token.",
+						Optional:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"jira_username": schema.StringAttribute{
+						MarkdownDescription: "The Jira username.",
 						Optional:            true,
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.UseStateForUnknown(),
@@ -118,6 +157,10 @@ func (r *brokerConnectionResource) Schema(_ context.Context, _ resource.SchemaRe
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				//TODO: remove after RequiresValidConfiguration completion
+				Validators: []validator.String{
+					stringvalidator.OneOf("gitlab", "jira"),
 				},
 			},
 		},
