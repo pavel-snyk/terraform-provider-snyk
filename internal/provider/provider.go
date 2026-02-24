@@ -230,6 +230,7 @@ func (p *snykProvider) Resources(_ context.Context) []func() resource.Resource {
 		NewBrokerConnectionResource,
 		NewBrokerDeploymentResource,
 		NewBrokerDeploymentCredentialResource,
+		NewBrokerIntegrationResource,
 		NewOrganizationResource,
 	}
 }
