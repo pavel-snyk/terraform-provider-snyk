@@ -65,7 +65,7 @@ For more information, see [Universal Broker documentation](https://docs.snyk.io/
 				},
 			},
 			"organization_id": schema.StringAttribute{
-				MarkdownDescription: "The ID of the organization to the broker integration belongs.",
+				MarkdownDescription: "The ID of the organization to the broker integration is connected to.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
