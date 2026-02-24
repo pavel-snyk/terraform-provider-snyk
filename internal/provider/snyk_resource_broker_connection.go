@@ -248,7 +248,7 @@ func (r *brokerConnectionResource) Create(ctx context.Context, request resource.
 func (r *brokerConnectionResource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var data brokerConnectionResourceModel
 
-	// read plan data into the model
+	// read state data into the model
 	response.Diagnostics.Append(request.State.Get(ctx, &data)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -360,7 +360,7 @@ func (r *brokerConnectionResource) Update(ctx context.Context, request resource.
 func (r *brokerConnectionResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var data brokerConnectionResourceModel
 
-	// read plan data into the model
+	// read state data into the model
 	response.Diagnostics.Append(request.State.Get(ctx, &data)...)
 	if response.Diagnostics.HasError() {
 		return
