@@ -1,4 +1,16 @@
 
+<a name="v1.0.0-rc7"></a>
+## v1.0.0-rc7 (2026-02-25)
+### Documentation
+* **resource/snyk_broker_integration**: update documentation with exmaples
+### Features
+* **resource/snyk_broker_integration**: add resource to manager broker integrations
+### Maintaining
+* **deps**: bump github.com/hashicorp/terraform-plugin-go
+* **deps**: bump hashicorp/setup-terraform from 3 to 4
+* **deps**: upgrade snyk-sdk-go to v2 latest dev version
+* **deps**: bump goreleaser/goreleaser-action from 6 to 7
+
 <a name="v1.0.0-rc6"></a>
 ## v1.0.0-rc6 (2026-02-23)
 ### Documentation
