@@ -40,13 +40,17 @@ type brokerConnectionResourceModel struct {
 }
 
 type brokerConnectionResourceConfigurationModel struct {
-	BrokerClientURL          types.String `tfsdk:"broker_client_url"`
-	GitLabHostname           types.String `tfsdk:"gitlab_hostname"`
-	GitLabTokenCredentialID  types.String `tfsdk:"gitlab_token_credential_id"`
-	JiraHostname             types.String `tfsdk:"jira_hostname"`
-	JiraPasswordCredentialID types.String `tfsdk:"jira_password_credential_id"`
-	JiraPATCredentialID      types.String `tfsdk:"jira_pat_credential_id"`
-	JiraUsername             types.String `tfsdk:"jira_username"`
+	BitbucketHostname             types.String `tfsdk:"bitbucket_hostname"`
+	BitbucketPasswordCredentialID types.String `tfsdk:"bitbucket_password_credential_id"`
+	BitbucketPATCredentialID      types.String `tfsdk:"bitbucket_pat_credential_id"`
+	BitbucketUsername             types.String `tfsdk:"bitbucket_username"`
+	BrokerClientURL               types.String `tfsdk:"broker_client_url"`
+	GitLabHostname                types.String `tfsdk:"gitlab_hostname"`
+	GitLabTokenCredentialID       types.String `tfsdk:"gitlab_token_credential_id"`
+	JiraHostname                  types.String `tfsdk:"jira_hostname"`
+	JiraPasswordCredentialID      types.String `tfsdk:"jira_password_credential_id"`
+	JiraPATCredentialID           types.String `tfsdk:"jira_pat_credential_id"`
+	JiraUsername                  types.String `tfsdk:"jira_username"`
 }
 
 func NewBrokerConnectionResource() resource.Resource {
@@ -88,6 +92,34 @@ see [Universal Broker documentation](https://docs.snyk.io/implementation-and-set
 					helper.RequiresValidConfiguration(path.MatchRoot("type")),
 				},
 				Attributes: map[string]schema.Attribute{
+					"bitbucket_hostname": schema.StringAttribute{
+						MarkdownDescription: "The Bitbucket hostname.",
+						Optional:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"bitbucket_password_credential_id": schema.StringAttribute{
+						MarkdownDescription: "The ID of the broker deployment credential for Bitbucket password.",
+						Optional:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"bitbucket_pat_credential_id": schema.StringAttribute{
+						MarkdownDescription: "The ID of the broker deployment credential for Bitbucket PAT token.",
+						Optional:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"bitbucket_username": schema.StringAttribute{
+						MarkdownDescription: "The Bitbucket username.",
+						Optional:            true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
 					"broker_client_url": schema.StringAttribute{
 						MarkdownDescription: "The URL of the broker client used by webhooks. It's recommended to use regional Snyk API URL.",
 						Optional:            true,
@@ -165,7 +197,7 @@ see [Universal Broker documentation](https://docs.snyk.io/implementation-and-set
 				},
 				//TODO: remove after RequiresValidConfiguration completion
 				Validators: []validator.String{
-					stringvalidator.OneOf("gitlab", "jira"),
+					stringvalidator.OneOf("bitbucket-server", "gitlab", "jira"),
 				},
 			},
 		},
@@ -208,11 +240,19 @@ func (r *brokerConnectionResource) Create(ctx context.Context, request resource.
 	brokerDeploymentID := data.BrokerDeploymentID.ValueString()
 
 	createRequest := &snyk.BrokerConnectionCreateOrUpdateRequest{
-		BrokerClientURL: dataConfiguration.BrokerClientURL.ValueString(),
-		GitLabHostname:  dataConfiguration.GitLabHostname.ValueString(),
-		GitLabToken:     dataConfiguration.GitLabTokenCredentialID.ValueString(),
-		Name:            data.Name.ValueString(),
-		Type:            snyk.BrokerConnectionType(data.Type.ValueString()),
+		BitbucketHostname: dataConfiguration.BitbucketHostname.ValueString(),
+		BitbucketPassword: dataConfiguration.BitbucketPasswordCredentialID.ValueString(),
+		BitbucketPAT:      dataConfiguration.BitbucketPATCredentialID.ValueString(),
+		BitbucketUsername: dataConfiguration.BitbucketUsername.ValueString(),
+		BrokerClientURL:   dataConfiguration.BrokerClientURL.ValueString(),
+		GitLabHostname:    dataConfiguration.GitLabHostname.ValueString(),
+		GitLabToken:       dataConfiguration.GitLabTokenCredentialID.ValueString(),
+		JiraHostname:      dataConfiguration.JiraHostname.ValueString(),
+		JiraPassword:      dataConfiguration.JiraPasswordCredentialID.ValueString(),
+		JiraPAT:           dataConfiguration.JiraPATCredentialID.ValueString(),
+		JiraUsername:      dataConfiguration.JiraUsername.ValueString(),
+		Name:              data.Name.ValueString(),
+		Type:              snyk.BrokerConnectionType(data.Type.ValueString()),
 	}
 	tflog.Trace(ctx, "Creating broker connection", map[string]any{
 		"app_install_id":       appInstallID,
@@ -320,11 +360,19 @@ func (r *brokerConnectionResource) Update(ctx context.Context, request resource.
 	brokerConnectionID := data.ID.ValueString()
 
 	updateRequest := &snyk.BrokerConnectionCreateOrUpdateRequest{
-		BrokerClientURL: dataConfiguration.BrokerClientURL.ValueString(),
-		GitLabHostname:  dataConfiguration.GitLabHostname.ValueString(),
-		GitLabToken:     dataConfiguration.GitLabTokenCredentialID.ValueString(),
-		Name:            data.Name.ValueString(),
-		Type:            snyk.BrokerConnectionType(data.Type.ValueString()),
+		BitbucketHostname: dataConfiguration.BitbucketHostname.ValueString(),
+		BitbucketPassword: dataConfiguration.BitbucketPasswordCredentialID.ValueString(),
+		BitbucketPAT:      dataConfiguration.BitbucketPATCredentialID.ValueString(),
+		BitbucketUsername: dataConfiguration.BitbucketUsername.ValueString(),
+		BrokerClientURL:   dataConfiguration.BrokerClientURL.ValueString(),
+		GitLabHostname:    dataConfiguration.GitLabHostname.ValueString(),
+		GitLabToken:       dataConfiguration.GitLabTokenCredentialID.ValueString(),
+		JiraHostname:      dataConfiguration.JiraHostname.ValueString(),
+		JiraPassword:      dataConfiguration.JiraPasswordCredentialID.ValueString(),
+		JiraPAT:           dataConfiguration.JiraPATCredentialID.ValueString(),
+		JiraUsername:      dataConfiguration.JiraUsername.ValueString(),
+		Name:              data.Name.ValueString(),
+		Type:              snyk.BrokerConnectionType(data.Type.ValueString()),
 	}
 	tflog.Trace(ctx, "Updating broker connection", map[string]any{
 		"app_install_id":       appInstallID,
