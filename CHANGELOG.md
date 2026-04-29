@@ -1,4 +1,17 @@
 
+<a name="v1.0.0-rc8"></a>
+## v1.0.0-rc8 (2026-04-29)
+### Documentation
+* **resource/snyk_broker_connection**: update documentation for 'bitbucket-server'
+### Features
+* **resource/snyk_broker_connection**: add 'bitbucket-server' to available configuration type
+### Maintaining
+* **deps**: upgrade direct packages to latest stable versions
+* **deps**: bump crazy-max/ghaction-import-gpg from 6 to 7
+* **deps**: bump github.com/hashicorp/terraform-plugin-framework
+* **deps**: bump github.com/hashicorp/terraform-plugin-sdk/v2
+* **tools**: bump tools dependencies to latest stable versions
+
 <a name="v1.0.0-rc7"></a>
 ## v1.0.0-rc7 (2026-02-25)
 ### Documentation
