@@ -63,10 +63,58 @@ func (av requiresValidConfiguration) ValidateObject(ctx context.Context, request
 	}
 
 	switch connectionType {
+	case "bitbucket-server":
+		av.validateBitbucketConfiguration(request.ConfigValue, request.Path, response)
 	case "gitlab":
 		av.validateGitLabConfiguration(request.ConfigValue, request.Path, response)
 	case "jira":
 		av.validateJiraConfiguration(request.ConfigValue, request.Path, response)
+	}
+}
+
+func (av requiresValidConfiguration) validateBitbucketConfiguration(config types.Object, path path.Path, response *validator.ObjectResponse) {
+	brokerClientURL, ok := config.Attributes()["broker_client_url"]
+	if !ok || brokerClientURL.IsNull() {
+		response.Diagnostics.AddAttributeError(
+			path,
+			"Missing required attribute for Bitbucket",
+			`Attribute "broker_client_url" is required when connection type is "bitbucket-server".`,
+		)
+	}
+
+	bitbucketHostname, ok := config.Attributes()["bitbucket_hostname"]
+	if !ok || bitbucketHostname.IsNull() {
+		response.Diagnostics.AddAttributeError(
+			path,
+			"Missing required attribute for Bitbucket",
+			`Attribute "bitbucket_hostname" is required when connection type is "bitbucket-server".`,
+		)
+	}
+
+	// only PAT or username/password can be configured
+	bitbucketPAT, patOk := config.Attributes()["bitbucket_pat_credential_id"]
+	bitbucketUsername, usernameOk := config.Attributes()["bitbucket_username"]
+	bitbucketPassword, passwordOk := config.Attributes()["bitbucket_password_credential_id"]
+
+	patIsSet := patOk && !bitbucketPAT.IsNull()
+	usernameIsSet := usernameOk && !bitbucketUsername.IsNull()
+	passwordIsSet := passwordOk && !bitbucketPassword.IsNull()
+
+	if patIsSet && (usernameIsSet || passwordIsSet) {
+		response.Diagnostics.AddAttributeError(
+			path,
+			"Conflicting Bitbucket authentication attributes",
+			`"bitbucket_pat_credential_id" cannot be used with "bitbucket_username" or "bitbucket_password_credential_id".
+Please provide either the PAT or the username/password combination.`,
+		)
+	}
+
+	if !patIsSet && (!usernameIsSet || !passwordIsSet) {
+		response.Diagnostics.AddAttributeError(
+			path,
+			"Incomplete Bitbucket authentication attributes",
+			`When connection type is "bitbucket-server", you must provide either "bitbucket_pat_credential_id" or both "bitbucket_username" and "bitbucket_password_credential_id".`,
+		)
 	}
 }
 

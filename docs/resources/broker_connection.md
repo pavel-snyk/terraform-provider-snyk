@@ -21,6 +21,61 @@ see [Universal Broker documentation](https://docs.snyk.io/implementation-and-set
 
 ## Example Usage
 
+### With Bitbucket PAT
+
+```terraform
+resource "snyk_broker_connection" "gitlab" {
+  app_install_id       = "<app-install-id>"
+  tenant_id            = "<tenant-id>"
+  broker_deployment_id = "<broker-deployment-id>"
+
+  type = "bitbucket-server"
+  name = "dev-bitbucket-connection"
+  configuration = {
+    broker_client_url           = "https://api.snyk.io"
+    bitbucket_hostname          = "<bitbucket-server-hostname>"
+    bitbucket_pat_credential_id = snyk_broker_deployment_credential.bitbucket.id
+  }
+}
+
+resource "snyk_broker_deployment_credential" "bitbucket" {
+  app_install_id       = "<app-install-id>"
+  tenant_id            = "<tenant-id>"
+  broker_deployment_id = "<broker-deplyment-id>"
+
+  environment_variable_name = "BB_PAT_TOKEN_FOR_DEV_CLUSTER"
+  broker_connection_type    = "bitbucket-server"
+}
+```
+
+### With Bitbucket username and password
+
+```terraform
+resource "snyk_broker_connection" "gitlab" {
+  app_install_id       = "<app-install-id>"
+  tenant_id            = "<tenant-id>"
+  broker_deployment_id = "<broker-deployment-id>"
+
+  type = "bitbucket-server"
+  name = "dev-bitbucket-connection"
+  configuration = {
+    broker_client_url                = "https://api.snyk.io"
+    bitbucket_hostname               = "<bitbucket-server-hostname>"
+    bitbucket_password_credential_id = snyk_broker_deployment_credential.bitbucket.id
+    bitbucket_username               = "<bitbucket-username>"
+  }
+}
+
+resource "snyk_broker_deployment_credential" "bitbucket" {
+  app_install_id       = "<app-install-id>"
+  tenant_id            = "<tenant-id>"
+  broker_deployment_id = "<broker-deplyment-id>"
+
+  environment_variable_name = "BB_USER_PASSWORD_FOR_DEV_CLUSTER"
+  broker_connection_type    = "bitbucket-server"
+}
+```
+
 ### With GitLab
 
 ```terraform
@@ -69,6 +124,10 @@ resource "snyk_broker_deployment_credential" "gitlab" {
 
 Optional:
 
+- `bitbucket_hostname` (String) The Bitbucket hostname.
+- `bitbucket_password_credential_id` (String) The ID of the broker deployment credential for Bitbucket password.
+- `bitbucket_pat_credential_id` (String) The ID of the broker deployment credential for Bitbucket PAT token.
+- `bitbucket_username` (String) The Bitbucket username.
 - `broker_client_url` (String) The URL of the broker client used by webhooks. It's recommended to use regional Snyk API URL.
 - `gitlab_hostname` (String) The GitLab hostname.
 - `gitlab_token_credential_id` (String) The ID of the broker deployment credential for GitLab token.
